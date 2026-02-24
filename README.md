@@ -34,7 +34,8 @@ WHAT YOU NEED:
 - Rest of libraries are already included (I think)
 - MicroSD card with (128 max) WAV files (mono 16bit 44100hz) If you dont have SD or is not inserted or no compatible WAV files on SD you can still use machine as synth only. NO SOUNDS ON FLASH
 
-VIDEO SOON ;)
+VIDEO DEMO SOUND 1
+https://www.youtube.com/watch?v=KDW14Gmv_Tc
 
 ## SYSTEM OVERVIEW
 Hybrid music production system based on the M5STACK TAB5 with the ESP32-P4 microcontroller. It combines an enhanced synthesis engine with a sample player, designed for live performance and generative musical ideas.
