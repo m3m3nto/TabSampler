@@ -25,7 +25,9 @@ USB HOST
 - USB MIDI host. Now is mapped to use with AKI APC KEY25
 
 WHAT YOU NEED:
-- M5STACK TAB5 HARDWARE 
+- M5STACK TAB5 HARDWARE
+Shopping link:
+https://s.click.aliexpress.com/e/_EvUGwd2
 - Arduino IDE 2.3.7
 - ESP boards from Expressif (3.3.3)
 - M5STACK boards (3.2.5)
