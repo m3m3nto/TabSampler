@@ -796,6 +796,7 @@ void setup() {
   auto cfg = M5.config();
   cfg.external_spk = true;  // Salida de línea/cascos
   //cfg.internal_spk = false;
+  cfg.output_power = true;
   M5.begin(cfg);
 
   // AUDIO
@@ -850,19 +851,19 @@ void setup() {
   //cargarDatos(); // Carga desde flash 16 memory (patterns + sounds)
 
   // USB MIDI HOST
-  Serial.println("Inicializando USB Host para MIDI...");
-  ESP_LOGI("", "Logs del sistema USB Host activados.");
-  usbh_setup(show_config_desc_full);
+  // Serial.println("Inicializando USB Host para MIDI...");
+  // ESP_LOGI("", "Logs del sistema USB Host activados.");
+  // usbh_setup(show_config_desc_full);
 
-  // Tarea que ejecutará la función usb_host_task_wrapper
-  xTaskCreatePinnedToCore(
-    usb_host_task_wrapper,
-    "USB Host Task",
-    4096,
-    NULL,
-    5,
-    &usbTaskHandle,
-    0);
+  // // Tarea que ejecutará la función usb_host_task_wrapper
+  // xTaskCreatePinnedToCore(
+  //   usb_host_task_wrapper,
+  //   "USB Host Task",
+  //   4096,
+  //   NULL,
+  //   5,
+  //   &usbTaskHandle,
+  //   0);
 
   // DISPLAY 2
 
