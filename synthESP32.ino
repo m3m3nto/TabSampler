@@ -659,10 +659,10 @@ void setRandomPattern(byte f){
 bool find_scale(uint8_t note){
 
   uint8_t candidate=note % 12;
-  // buscar en array de escalas
+  // buscar en array de musicalScales
   bool in_scale=false;
   for (byte s = 0; s < 8; s++) {
-    if (note==escalas[selected_scale][s]){
+    if (note==musicalScales[selected_scale][s]){
       in_scale=true;
       break;
     }
@@ -680,7 +680,7 @@ void setRandomPitch(uint8_t ssound) {
   // (ignore note 255)
   uint8_t numNotas = 0;
   for (uint8_t i = 0; i < 8; i++) {
-    if (escalas[selected_scale][i] == 255) {
+    if (musicalScales[selected_scale][i] == 255) {
       break;
     }
     numNotas++;
@@ -692,7 +692,7 @@ void setRandomPitch(uint8_t ssound) {
   for (uint8_t i = 0; i < 16; i++) {
     
     uint8_t randomIndex = random(0, numNotas);
-    uint8_t intervalo = escalas[selected_scale][randomIndex];
+    uint8_t intervalo = musicalScales[selected_scale][randomIndex];
 
     int8_t octaveShift = (random(0, 3) - 1) * 12;
 

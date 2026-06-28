@@ -2,8 +2,8 @@
 void DO_KEYPAD(){
 
   for (int f=0;f<MAX_BUTTONS;f++) {
-    if (mBoton[f]->trigger_on==1){
-      mBoton[f]->trigger_on=0;
+    if (mButtons[f]->trigger_on==1){
+      mButtons[f]->trigger_on=0;
 
       nkey=f;
 
@@ -615,8 +615,8 @@ void DO_KEYPAD(){
 
   //////////////////////////////////////////////////////////////////// bars
   for (int f=0;f<MAX_BARS;f++) {
-    if (mRot[f]->trigger_on==1){
-      mRot[f]->trigger_on=0;
+    if (mRotators[f]->trigger_on==1){
+      mRotators[f]->trigger_on=0;
 
       nkey=f;
       selected_rot=nkey;
@@ -636,8 +636,8 @@ void DO_KEYPAD(){
 
   //////////////////////////////////////////////////////////////////// seq buttons
   for (int f=0;f<16;f++) {
-    if (mBseq[f]->trigger_on==1){
-      mBseq[f]->trigger_on=0;
+    if (mSequencers[f]->trigger_on==1){
+      mSequencers[f]->trigger_on=0;
       bitWrite(pattern[selected_sound],f,!bitRead(pattern[selected_sound],f));
       melodic[selected_sound][f]=ROTvalue[selected_sound][12];
       refreshSEQ=true;

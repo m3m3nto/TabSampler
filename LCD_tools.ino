@@ -35,9 +35,9 @@ void showLastTouched() {
   }
   // Serial.print("lt ");
   // Serial.println(last_touched);
-  //M5.Display.drawRect(mBoton[last_touched]->x + 0, mBoton[last_touched]->y + 0, mBoton[last_touched]->w - 1, mBoton[last_touched]->h - 1, mBoton[last_touched]->color);
-  M5.Display.drawRect(mBoton[last_touched]->x + 3, mBoton[last_touched]->y + 3, mBoton[last_touched]->w - 7, mBoton[last_touched]->h - 7, mBoton[last_touched]->color);
-  M5.Display.drawRect(mBoton[last_touched]->x + 4, mBoton[last_touched]->y + 4, mBoton[last_touched]->w - 9, mBoton[last_touched]->h - 9, mBoton[last_touched]->color);
+  //M5.Display.drawRect(mButtons[last_touched]->x + 0, mButtons[last_touched]->y + 0, mButtons[last_touched]->w - 1, mButtons[last_touched]->h - 1, mButtons[last_touched]->color);
+  M5.Display.drawRect(mButtons[last_touched]->x + 3, mButtons[last_touched]->y + 3, mButtons[last_touched]->w - 7, mButtons[last_touched]->h - 7, mButtons[last_touched]->color);
+  M5.Display.drawRect(mButtons[last_touched]->x + 4, mButtons[last_touched]->y + 4, mButtons[last_touched]->w - 9, mButtons[last_touched]->h - 9, mButtons[last_touched]->color);
   show_last_touched = false;
   clear_last_touched = true;
 }
@@ -54,9 +54,9 @@ void clearLastTouched() {
   //Serial.println(last_touched);
   for (byte f = 0; f < MAX_BUTTONS; f++) {
     //if (f<33 || (f>32 && rPage==2) || (f>37 && f<43) || (f>42 && rPage==2)) {
-    if (mBoton[f]->rPage==0 || mBoton[f]->rPage==rPage) {
-      M5.Display.drawRect(mBoton[f]->x + 3, mBoton[f]->y + 3, mBoton[f]->w - 7, mBoton[f]->h - 7, BLACK);
-      M5.Display.drawRect(mBoton[f]->x + 4, mBoton[f]->y + 4, mBoton[f]->w - 9, mBoton[f]->h - 9, BLACK);
+    if (mButtons[f]->rPage==0 || mButtons[f]->rPage==rPage) {
+      M5.Display.drawRect(mButtons[f]->x + 3, mButtons[f]->y + 3, mButtons[f]->w - 7, mButtons[f]->h - 7, BLACK);
+      M5.Display.drawRect(mButtons[f]->x + 4, mButtons[f]->y + 4, mButtons[f]->w - 9, mButtons[f]->h - 9, BLACK);
     }
   }
   clear_last_touched = false;
@@ -70,8 +70,8 @@ void clearLastTouched() {
 void paint_mute_marks(uint8_t f,uint16_t color){
   int pos_x;
   int pos_y;  
-    pos_x=mBoton[f]->x+15;
-    pos_y=mBoton[f]->y+15;
+    pos_x=mButtons[f]->x+15;
+    pos_y=mButtons[f]->y+15;
     M5.Display.setCursor(pos_x,pos_y);
     M5.Display.setTextColor(color, BLACK);
     M5.Display.print("M");      
@@ -79,8 +79,8 @@ void paint_mute_marks(uint8_t f,uint16_t color){
 void paint_solo_marks(uint8_t f,uint16_t color){  
   int pos_x;
   int pos_y;  
-    pos_x=mBoton[f]->x+35;
-    pos_y=mBoton[f]->y+15;
+    pos_x=mButtons[f]->x+35;
+    pos_y=mButtons[f]->y+15;
     M5.Display.setCursor(pos_x,pos_y);
     M5.Display.setTextColor(color, BLACK);
     M5.Display.print("S");       
@@ -91,8 +91,8 @@ void clean_mute_marks(){
   int pos_y;  
   // borrar todos los marcadores de mute
   for (int f=0;f<16;f++){      
-    pos_x=mBoton[f]->x+15;
-    pos_y=mBoton[f]->y+15;
+    pos_x=mButtons[f]->x+15;
+    pos_y=mButtons[f]->y+15;
     M5.Display.setCursor(pos_x,pos_y);
     M5.Display.setTextColor(OSCURO, BLACK);
     M5.Display.print("M");      
@@ -103,8 +103,8 @@ void clean_solo_marks(){
   int pos_y;
   // borrar todos los marcadores de solo
   for (int f=0;f<16;f++){      
-    pos_x=mBoton[f]->x+35;
-    pos_y=mBoton[f]->y+15;
+    pos_x=mButtons[f]->x+35;
+    pos_y=mButtons[f]->y+15;
     M5.Display.setCursor(pos_x,pos_y);
     M5.Display.setTextColor(OSCURO, BLACK);
     M5.Display.print("S");       
@@ -116,29 +116,29 @@ void show_dark_selectors_ONLY1(){  // only once
 
   // borrar todos los marcadores de selected_sound
   for (int f=0;f<16;f++){      
-    pos_x=mBoton[f]->x+50;
-    pos_y=mBoton[f]->y+70;
+    pos_x=mButtons[f]->x+50;
+    pos_y=mButtons[f]->y+70;
     M5.Display.fillRect(pos_x, pos_y, 12, 8, OSCURO);
   }
 
   // borrar todos los marcadores de selected_pattern 
   for (int f=0;f<16;f++){      
-    pos_x=mBoton[f]->x+66;
-    pos_y=mBoton[f]->y+70;
+    pos_x=mButtons[f]->x+66;
+    pos_y=mButtons[f]->y+70;
     M5.Display.fillRect(pos_x, pos_y, 12, 8, OSCURO);     
   }
 
   // borrar todos los marcadores de selected_sndSet
   for (int f=0;f<16;f++){      
-    pos_x=mBoton[f]->x+82;
-    pos_y=mBoton[f]->y+70;
+    pos_x=mButtons[f]->x+82;
+    pos_y=mButtons[f]->y+70;
     M5.Display.fillRect(pos_x, pos_y, 12, 8, OSCURO);          
   }  
 
   // borrar todos los marcadores de selected_memory
   for (int f=0;f<16;f++){      
-    pos_x=mBoton[f]->x+98;
-    pos_y=mBoton[f]->y+70;
+    pos_x=mButtons[f]->x+98;
+    pos_y=mButtons[f]->y+70;
     M5.Display.fillRect(pos_x, pos_y, 12, 8, OSCURO);       
   }
 
@@ -153,15 +153,15 @@ void show_all_bars(){
   int pos_y;
 
   for (int f=1; f<MAX_BARS; f++){ 
-    if (mRot[f]->rPage==rPage){ // si el controlador pertenece a la pagina seleccionada
+    if (mRotators[f]->rPage==rPage){ // si el controlador pertenece a la pagina seleccionada
       int y_offSet=0;
       //if (f<2) y_offSet=150;
-      M5.Display.drawRect(mRot[f]->x, mRot[f]->y, mRot[f]->w-1, mRot[f]->h-1, DARKGREY);
-      pos_x=mRot[f]->x+5;  
-      pos_y=mRot[f]->y+5; //32+y_offSet;
+      M5.Display.drawRect(mRotators[f]->x, mRotators[f]->y, mRotators[f]->w-1, mRotators[f]->h-1, DARKGREY);
+      pos_x=mRotators[f]->x+5;  
+      pos_y=mRotators[f]->y+5; //32+y_offSet;
       M5.Display.setCursor(pos_x,pos_y);
       M5.Display.setTextColor(DARKGREY, BLACK);
-      M5.Display.print(mRot[f]->text);
+      M5.Display.print(mRotators[f]->text);
     }
   }
 
@@ -177,12 +177,12 @@ void show_all_bars(){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void drawPADsound(byte f, int color){
-  M5.Display.fillRect(mBoton[f]->x + 68, mBoton[f]->y + 15, 24, 12, color);
+  M5.Display.fillRect(mButtons[f]->x + 68, mButtons[f]->y + 15, 24, 12, color);
 }
 
 void drawSEQmark(byte f, int color){
   int bval;
-  M5.Display.fillRect(mBseq[f]->x + 21, mBseq[f]->y + 70, 24, 12, color);
+  M5.Display.fillRect(mSequencers[f]->x + 21, mSequencers[f]->y + 70, 24, 12, color);
   if (color==ZRED){
     if (isMelodic[selected_sound]) {
       bval=melodic[selected_sound][f];
@@ -195,10 +195,10 @@ void drawSEQmark(byte f, int color){
   //if (bval!=0){
     int tx=M5.Display.textWidth(String(bval));
     int ty=M5.Display.fontHeight();
-    int pos_x=mBseq[f]->x+(mBseq[f]->w/2)-(tx/2);
-    int pos_y=mBseq[f]->y+(mBseq[f]->h/2)-(ty/2);
+    int pos_x=mSequencers[f]->x+(mSequencers[f]->w/2)-(tx/2);
+    int pos_y=mSequencers[f]->y+(mSequencers[f]->h/2)-(ty/2);
     M5.Display.setTextColor(color, BLACK);
-    M5.Display.fillRect(mBseq[f]->x+9, pos_y, mBseq[f]->w-19, ty, BLACK);
+    M5.Display.fillRect(mSequencers[f]->x+9, pos_y, mSequencers[f]->w-19, ty, BLACK);
     if (bval!=0){ 
       M5.Display.setCursor(pos_x, pos_y);
       M5.Display.print(bval);
@@ -212,14 +212,14 @@ void drawSEQmark(byte f, int color){
 }
 
 void drawSTEPmark(byte f, int color){
-  M5.Display.fillRect(mBseq[f]->x + 20, mBseq[f]->y + 15, 24, 12, color);
+  M5.Display.fillRect(mSequencers[f]->x + 20, mSequencers[f]->y + 15, 24, 12, color);
 
 }
 
 void drawBTPAD(byte bt, int color, String texto = "") { // only 1
   byte f=bt;
-  mBoton[bt]->color = color;
-  M5.Display.drawRect(mBoton[f]->x + 3, mBoton[f]->y + 3, mBoton[f]->w - 7, mBoton[f]->h - 7, color);
+  mButtons[bt]->color = color;
+  M5.Display.drawRect(mButtons[f]->x + 3, mButtons[f]->y + 3, mButtons[f]->w - 7, mButtons[f]->h - 7, color);
 
 }
 
@@ -228,59 +228,59 @@ void drawBTPAD(byte bt, int color, String texto = "") { // only 1
 void drawBTSEQ(byte bt) {
 
   byte f=bt;
-  M5.Display.drawRect(mBseq[f]->x + 3, mBseq[f]->y + 3, mBseq[f]->w - 7, mBseq[f]->h - 7, mBseq[f]->color);
-  M5.Display.drawRect(mBseq[f]->x + 4, mBseq[f]->y + 4, mBseq[f]->w - 9, mBseq[f]->h - 9, mBseq[f]->color);
-  M5.Display.drawRect(mBseq[f]->x + 5, mBseq[f]->y + 5, mBseq[f]->w - 11, mBseq[f]->h - 11, mBseq[f]->color);
-  M5.Display.drawRect(mBseq[f]->x + 6, mBseq[f]->y + 6, mBseq[f]->w - 13, mBseq[f]->h - 13, mBseq[f]->color);
-  M5.Display.drawRect(mBseq[f]->x + 7, mBseq[f]->y + 7, mBseq[f]->w - 15, mBseq[f]->h - 15, mBseq[f]->color);
-  M5.Display.drawRect(mBseq[f]->x + 8, mBseq[f]->y + 8, mBseq[f]->w - 17, mBseq[f]->h - 17, mBseq[f]->color);
+  M5.Display.drawRect(mSequencers[f]->x + 3, mSequencers[f]->y + 3, mSequencers[f]->w - 7, mSequencers[f]->h - 7, mSequencers[f]->color);
+  M5.Display.drawRect(mSequencers[f]->x + 4, mSequencers[f]->y + 4, mSequencers[f]->w - 9, mSequencers[f]->h - 9, mSequencers[f]->color);
+  M5.Display.drawRect(mSequencers[f]->x + 5, mSequencers[f]->y + 5, mSequencers[f]->w - 11, mSequencers[f]->h - 11, mSequencers[f]->color);
+  M5.Display.drawRect(mSequencers[f]->x + 6, mSequencers[f]->y + 6, mSequencers[f]->w - 13, mSequencers[f]->h - 13, mSequencers[f]->color);
+  M5.Display.drawRect(mSequencers[f]->x + 7, mSequencers[f]->y + 7, mSequencers[f]->w - 15, mSequencers[f]->h - 15, mSequencers[f]->color);
+  M5.Display.drawRect(mSequencers[f]->x + 8, mSequencers[f]->y + 8, mSequencers[f]->w - 17, mSequencers[f]->h - 17, mSequencers[f]->color);
 }
 
 
 void drawBT(byte bt, int color, String texto = "") {
 
-  if (mBoton[bt]->rPage==0 || mBoton[bt]->rPage==rPage) {
+  if (mButtons[bt]->rPage==0 || mButtons[bt]->rPage==rPage) {
   } else {
     return;
   }
-  mBoton[bt]->color = color;
+  mButtons[bt]->color = color;
   byte f=bt;
 
-  //M5.Display.drawRect(mBoton[f]->x + 2, mBoton[f]->y + 2, mBoton[f]->w - 5, mBoton[f]->h - 5, color);
+  //M5.Display.drawRect(mButtons[f]->x + 2, mButtons[f]->y + 2, mButtons[f]->w - 5, mButtons[f]->h - 5, color);
   
   //
-    M5.Display.drawRect(mBoton[f]->x + 5, mBoton[f]->y + 5, mBoton[f]->w - 11, mBoton[f]->h - 11, color);
+    M5.Display.drawRect(mButtons[f]->x + 5, mButtons[f]->y + 5, mButtons[f]->w - 11, mButtons[f]->h - 11, color);
 
   if (f<16) {
 
-    //M5.Display.drawRect(mBoton[f]->x + 4, mBoton[f]->y + 4, mBoton[f]->w -  9, mBoton[f]->h -  9, color);
-    //M5.Display.drawRect(mBoton[f]->x + 5, mBoton[f]->y + 5, mBoton[f]->w - 11, mBoton[f]->h - 11, color);
+    //M5.Display.drawRect(mButtons[f]->x + 4, mButtons[f]->y + 4, mButtons[f]->w -  9, mButtons[f]->h -  9, color);
+    //M5.Display.drawRect(mButtons[f]->x + 5, mButtons[f]->y + 5, mButtons[f]->w - 11, mButtons[f]->h - 11, color);
 
-    M5.Display.drawRect(mBoton[f]->x + 6, mBoton[f]->y + 6, mBoton[f]->w - 13, mBoton[f]->h - 13, color);
-    M5.Display.drawRect(mBoton[f]->x + 7, mBoton[f]->y + 7, mBoton[f]->w - 15, mBoton[f]->h - 15, color);
-    //M5.Display.drawRect(mBoton[f]->x + 8, mBoton[f]->y + 8, mBoton[f]->w - 17, mBoton[f]->h - 17, color);
+    M5.Display.drawRect(mButtons[f]->x + 6, mButtons[f]->y + 6, mButtons[f]->w - 13, mButtons[f]->h - 13, color);
+    M5.Display.drawRect(mButtons[f]->x + 7, mButtons[f]->y + 7, mButtons[f]->w - 15, mButtons[f]->h - 15, color);
+    //M5.Display.drawRect(mButtons[f]->x + 8, mButtons[f]->y + 8, mButtons[f]->w - 17, mButtons[f]->h - 17, color);
 
   } 
   // if (color!=DARKGREY) {
-  //   M5.Display.drawRect(mBoton[f]->x + 4, mBoton[f]->y + 4, mBoton[f]->w - 9, mBoton[f]->h - 9, color);
-  //   M5.Display.drawRect(mBoton[f]->x + 5, mBoton[f]->y + 5, mBoton[f]->w - 11, mBoton[f]->h - 11, color);  
+  //   M5.Display.drawRect(mButtons[f]->x + 4, mButtons[f]->y + 4, mButtons[f]->w - 9, mButtons[f]->h - 9, color);
+  //   M5.Display.drawRect(mButtons[f]->x + 5, mButtons[f]->y + 5, mButtons[f]->w - 11, mButtons[f]->h - 11, color);  
   // } else {
-  //   M5.Display.drawRect(mBoton[f]->x + 4, mBoton[f]->y + 4, mBoton[f]->w - 9, mBoton[f]->h - 9, BLACK);
-  //   M5.Display.drawRect(mBoton[f]->x + 5, mBoton[f]->y + 5, mBoton[f]->w - 11, mBoton[f]->h - 11, BLACK);      
+  //   M5.Display.drawRect(mButtons[f]->x + 4, mButtons[f]->y + 4, mButtons[f]->w - 9, mButtons[f]->h - 9, BLACK);
+  //   M5.Display.drawRect(mButtons[f]->x + 5, mButtons[f]->y + 5, mButtons[f]->w - 11, mButtons[f]->h - 11, BLACK);      
   // } 
    if (color!=DARKGREY) {
-    M5.Display.drawRect(mBoton[f]->x + 6, mBoton[f]->y + 6, mBoton[f]->w - 13, mBoton[f]->h - 13, color);
-    M5.Display.drawRect(mBoton[f]->x + 7, mBoton[f]->y + 7, mBoton[f]->w - 15, mBoton[f]->h - 15, color);  
+    M5.Display.drawRect(mButtons[f]->x + 6, mButtons[f]->y + 6, mButtons[f]->w - 13, mButtons[f]->h - 13, color);
+    M5.Display.drawRect(mButtons[f]->x + 7, mButtons[f]->y + 7, mButtons[f]->w - 15, mButtons[f]->h - 15, color);  
   } else {
-    M5.Display.drawRect(mBoton[f]->x + 6, mBoton[f]->y + 6, mBoton[f]->w - 13, mBoton[f]->h - 13, BLACK);
-    M5.Display.drawRect(mBoton[f]->x + 7, mBoton[f]->y + 7, mBoton[f]->w - 15, mBoton[f]->h - 15, BLACK);      
+    M5.Display.drawRect(mButtons[f]->x + 6, mButtons[f]->y + 6, mButtons[f]->w - 13, mButtons[f]->h - 13, BLACK);
+    M5.Display.drawRect(mButtons[f]->x + 7, mButtons[f]->y + 7, mButtons[f]->w - 15, mButtons[f]->h - 15, BLACK);      
   } 
 
   /////////////////////// Button texts
 
   String btext;
   if (texto == "") {
-    btext=mBoton[f]->text;
+    btext=mButtons[f]->text;
   } else {
     btext=texto;
   }
@@ -288,28 +288,28 @@ void drawBT(byte bt, int color, String texto = "") {
   int tx=M5.Display.textWidth(btext);
   int ty=M5.Display.fontHeight();
 
-  int pos_x=mBoton[f]->x+(mBoton[f]->w/2)-(tx/2);
-  int pos_y=mBoton[f]->y+(mBoton[f]->h/2)-(ty/2);
+  int pos_x=mButtons[f]->x+(mButtons[f]->w/2)-(tx/2);
+  int pos_y=mButtons[f]->y+(mButtons[f]->h/2)-(ty/2);
 
-  M5.Display.fillRect(mBoton[f]->x + 10, pos_y, mBoton[f]->w - 20, ty, BLACK);
+  M5.Display.fillRect(mButtons[f]->x + 10, pos_y, mButtons[f]->w - 20, ty, BLACK);
 
   if (bt < 16) {
     M5.Display.setTextColor(LIGHTGREY, BLACK);
     if (modeZ == tWrite) {
       // if (bitRead(pattern[selected_sound], bt)) {  // note on
       //   M5.Display.setTextColor(ZRED, BLACK);
-      //   M5.Display.setCursor(mBoton[f]->x + 10, pos_y);
+      //   M5.Display.setCursor(mButtons[f]->x + 10, pos_y);
       //   M5.Display.printf("%-3d", melodic[selected_sound][bt]);
       // }
     } else {
-      //M5.Display.fillRect(mBoton[f]->x + 10, pos_y, mBoton[f]->w - 20, ty, BLACK);
+      //M5.Display.fillRect(mButtons[f]->x + 10, pos_y, mButtons[f]->w - 20, ty, BLACK);
       M5.Display.setTextColor(color, BLACK);
       M5.Display.setCursor(pos_x, pos_y); 
       M5.Display.print(btext);      
     }
       
   } else { 
-    //M5.Display.fillRect(mBoton[f]->x + 10, pos_y, mBoton[f]->w - 20, ty, BLACK);
+    //M5.Display.fillRect(mButtons[f]->x + 10, pos_y, mButtons[f]->w - 20, ty, BLACK);
     M5.Display.setTextColor(color, BLACK);
     M5.Display.setCursor(pos_x, pos_y); 
     M5.Display.print(btext);
@@ -322,7 +322,7 @@ void REFRESH_KEYS() {
 
     // Clear modes
     for (byte f = 16; f < MAX_BUTTONS; f++) {
-      if ((mBoton[f]->rPage==0 || mBoton[f]->rPage==rPage) && f!=42) { // 42=shift
+      if ((mButtons[f]->rPage==0 || mButtons[f]->rPage==rPage) && f!=42) { // 42=shift
         drawBT(f, DARKGREY);
       }
     }    
@@ -874,10 +874,10 @@ void do_drawBar(byte bar){
   }
 
   byte qbar=bar;
-  int pos_x=mRot[bar]->x;  
-  int pos_y=mRot[bar]->y;
-  int ancho=mRot[bar]->w;
-  int alto =mRot[bar]->h;
+  int pos_x=mRotators[bar]->x;  
+  int pos_y=mRotators[bar]->y;
+  int ancho=mRotators[bar]->w;
+  int alto =mRotators[bar]->h;
 
   
   int y_offSet=0;
@@ -897,16 +897,16 @@ void do_drawBar(byte bar){
 
   // special
   if (f==20) {
-    snprintf(bufferSeguro, sizeof(bufferSeguro), "%-12s", nombresEscalas[selected_scale]);
-    M5.Display.print(bufferSeguro);
+    snprintf(safeBuffer, sizeof(safeBuffer), "%-12s", scaleNames[selected_scale]);
+    M5.Display.print(safeBuffer);
   }
   if (f<2) {
     if (ROTvalue[selected_sound][16]==0) {
-      snprintf(bufferSeguro, sizeof(bufferSeguro), "%-26s", SAMPLE_NAMES[ROTvalue[selected_sound][0]].c_str());      
+      snprintf(safeBuffer, sizeof(safeBuffer), "%-26s", SAMPLE_NAMES[ROTvalue[selected_sound][0]].c_str());      
     } else {
-      snprintf(bufferSeguro, sizeof(bufferSeguro), "%-26s",  txt_wtables[ROTvalue[selected_sound][1]]);      
+      snprintf(safeBuffer, sizeof(safeBuffer), "%-26s",  txt_wtables[ROTvalue[selected_sound][1]]);      
     }
-    M5.Display.print(bufferSeguro);
+    M5.Display.print(safeBuffer);
   }
 
   if (bar<9 || bar==16) { // todos los rot relacionados
@@ -918,10 +918,10 @@ void do_drawBar(byte bar){
 void draw_pagerot_marks(){
   for (byte f = 0; f < MAX_BARS; f++) { 
     // Marca de pagerot
-    if (pageRot==mRot[f]->pageRot){
-      M5.Display.drawRect(mRot[f]->x+1, mRot[f]->y+1, mRot[f]->w-3, mRot[f]->h-3, ZRED);
+    if (pageRot==mRotators[f]->pageRot){
+      M5.Display.drawRect(mRotators[f]->x+1, mRotators[f]->y+1, mRotators[f]->w-3, mRotators[f]->h-3, ZRED);
     } else {
-      M5.Display.drawRect(mRot[f]->x+1, mRot[f]->y+1, mRot[f]->w-3, mRot[f]->h-3, BLACK);
+      M5.Display.drawRect(mRotators[f]->x+1, mRotators[f]->y+1, mRotators[f]->w-3, mRotators[f]->h-3, BLACK);
     }
   }
 }
@@ -944,41 +944,41 @@ void REFRESH_STATUS(){
 
   // ticks: selected sound, pattern, soundset, memory
   if (selected_sound!=s_old_selected_sound) {    
-    pos_x=mBoton[s_old_selected_sound]->x+50;
-    pos_y=mBoton[s_old_selected_sound]->y+70;
+    pos_x=mButtons[s_old_selected_sound]->x+50;
+    pos_y=mButtons[s_old_selected_sound]->y+70;
     M5.Display.fillRect(pos_x, pos_y, 12, 8, OSCURO);
-    pos_x=mBoton[selected_sound]->x+50;
-    pos_y=mBoton[selected_sound]->y+70;
+    pos_x=mButtons[selected_sound]->x+50;
+    pos_y=mButtons[selected_sound]->y+70;
     M5.Display.fillRect(pos_x, pos_y, 12, 8, ZYELLOW); 
     s_old_selected_sound=selected_sound; 
   }
 
   if (selected_pattern!=s_old_selected_pattern) {
-    pos_x=mBoton[s_old_selected_pattern]->x+66;
-    pos_y=mBoton[s_old_selected_pattern]->y+70;
+    pos_x=mButtons[s_old_selected_pattern]->x+66;
+    pos_y=mButtons[s_old_selected_pattern]->y+70;
     M5.Display.fillRect(pos_x, pos_y, 12, 8, OSCURO);
-    pos_x=mBoton[selected_pattern]->x+66;
-    pos_y=mBoton[selected_pattern]->y+70;
+    pos_x=mButtons[selected_pattern]->x+66;
+    pos_y=mButtons[selected_pattern]->y+70;
     M5.Display.fillRect(pos_x, pos_y, 12, 8, GREEN); 
     s_old_selected_pattern=selected_pattern; 
   }
 
   if (selected_sndSet!=s_old_selected_sndSet) {    
-    pos_x=mBoton[s_old_selected_sndSet]->x+82;
-    pos_y=mBoton[s_old_selected_sndSet]->y+70;
+    pos_x=mButtons[s_old_selected_sndSet]->x+82;
+    pos_y=mButtons[s_old_selected_sndSet]->y+70;
     M5.Display.fillRect(pos_x, pos_y, 12, 8, OSCURO);
-    pos_x=mBoton[selected_sndSet]->x+82;
-    pos_y=mBoton[selected_sndSet]->y+70;
+    pos_x=mButtons[selected_sndSet]->x+82;
+    pos_y=mButtons[selected_sndSet]->y+70;
     M5.Display.fillRect(pos_x, pos_y, 12, 8, ZBLUE);
     s_old_selected_sndSet=selected_sndSet; 
   }
 
   if (selected_memory!=s_old_selected_memory) {  
-    pos_x=mBoton[s_old_selected_memory]->x+98;
-    pos_y=mBoton[s_old_selected_memory]->y+70;
+    pos_x=mButtons[s_old_selected_memory]->x+98;
+    pos_y=mButtons[s_old_selected_memory]->y+70;
     M5.Display.fillRect(pos_x, pos_y, 12, 8, OSCURO);   
-    pos_x=mBoton[selected_memory]->x+98; 
-    pos_y=mBoton[selected_memory]->y+70;
+    pos_x=mButtons[selected_memory]->x+98; 
+    pos_y=mButtons[selected_memory]->y+70;
     M5.Display.fillRect(pos_x, pos_y, 12, 8, MAGENTA);
     s_old_selected_memory=selected_memory;
   }
@@ -986,14 +986,14 @@ void REFRESH_STATUS(){
   // selected rotary
    if (selected_rot!=s_old_selected_rot) {
     if (s_old_selected_rot!=99) {
-      if (mRot[s_old_selected_rot]->rPage==rPage){ 
-        M5.Display.drawRect(mRot[s_old_selected_rot]->x, mRot[s_old_selected_rot]->y, mRot[s_old_selected_rot]->w-1, mRot[s_old_selected_rot]->h-1, DARKGREY); 
-        M5.Display.drawRect(mRot[s_old_selected_rot]->x+1, mRot[s_old_selected_rot]->y+1, mRot[s_old_selected_rot]->w-3, mRot[s_old_selected_rot]->h-3, BLACK); 
+      if (mRotators[s_old_selected_rot]->rPage==rPage){ 
+        M5.Display.drawRect(mRotators[s_old_selected_rot]->x, mRotators[s_old_selected_rot]->y, mRotators[s_old_selected_rot]->w-1, mRotators[s_old_selected_rot]->h-1, DARKGREY); 
+        M5.Display.drawRect(mRotators[s_old_selected_rot]->x+1, mRotators[s_old_selected_rot]->y+1, mRotators[s_old_selected_rot]->w-3, mRotators[s_old_selected_rot]->h-3, BLACK); 
       }
     }
-    if (mRot[selected_rot]->rPage==rPage){ 
-      M5.Display.drawRect(mRot[selected_rot]->x, mRot[selected_rot]->y, mRot[selected_rot]->w-1, mRot[selected_rot]->h-1, ZYELLOW); 
-      M5.Display.drawRect(mRot[selected_rot]->x+1, mRot[selected_rot]->y+1, mRot[selected_rot]->w-3, mRot[selected_rot]->h-3, ZYELLOW);     
+    if (mRotators[selected_rot]->rPage==rPage){ 
+      M5.Display.drawRect(mRotators[selected_rot]->x, mRotators[selected_rot]->y, mRotators[selected_rot]->w-1, mRotators[selected_rot]->h-1, ZYELLOW); 
+      M5.Display.drawRect(mRotators[selected_rot]->x+1, mRotators[selected_rot]->y+1, mRotators[selected_rot]->w-3, mRotators[selected_rot]->h-3, ZYELLOW);     
       s_old_selected_rot=selected_rot;
     }
     
@@ -1014,147 +1014,147 @@ void REFRESH_STATUS(){
 void fillBPOS() {
 
   /// sequencer buttons
-  mBseq[0]  = new Bseq(    38, 410, 66, 100, bRojo);
-  mBseq[1]  = new Bseq(   103, 410, 66, 100, bRojo);
-  mBseq[2]  = new Bseq(   168, 410, 66, 100, bRojo);
-  mBseq[3]  = new Bseq(   233, 410, 66, 100, bRojo);
-  mBseq[4]  = new Bseq(   298, 410, 66, 100, bNaranja);
-  mBseq[5]  = new Bseq(   363, 410, 66, 100, bNaranja);
-  mBseq[6]  = new Bseq(   428, 410, 66, 100, bNaranja);
-  mBseq[7]  = new Bseq(   493, 410, 66, 100, bNaranja);
-  mBseq[8]  = new Bseq(   558, 410, 66, 100, bAmarillo);
-  mBseq[9]  = new Bseq(   623, 410, 66, 100, bAmarillo);
-  mBseq[10] = new Bseq(   688, 410, 66, 100, bAmarillo);
-  mBseq[11] = new Bseq(   753, 410, 66, 100, bAmarillo);
-  mBseq[12] = new Bseq(   818, 410, 66, 100, bBlanco);                      
-  mBseq[13] = new Bseq(   883, 410, 66, 100, bBlanco);
-  mBseq[14] = new Bseq(   948, 410, 66, 100, bBlanco);
-  mBseq[15] = new Bseq(  1013, 410, 66, 100, bBlanco);
+  mSequencers[0]  = new Bseq(    38, 410, 66, 100, bRojo);
+  mSequencers[1]  = new Bseq(   103, 410, 66, 100, bRojo);
+  mSequencers[2]  = new Bseq(   168, 410, 66, 100, bRojo);
+  mSequencers[3]  = new Bseq(   233, 410, 66, 100, bRojo);
+  mSequencers[4]  = new Bseq(   298, 410, 66, 100, bNaranja);
+  mSequencers[5]  = new Bseq(   363, 410, 66, 100, bNaranja);
+  mSequencers[6]  = new Bseq(   428, 410, 66, 100, bNaranja);
+  mSequencers[7]  = new Bseq(   493, 410, 66, 100, bNaranja);
+  mSequencers[8]  = new Bseq(   558, 410, 66, 100, bAmarillo);
+  mSequencers[9]  = new Bseq(   623, 410, 66, 100, bAmarillo);
+  mSequencers[10] = new Bseq(   688, 410, 66, 100, bAmarillo);
+  mSequencers[11] = new Bseq(   753, 410, 66, 100, bAmarillo);
+  mSequencers[12] = new Bseq(   818, 410, 66, 100, bBlanco);                      
+  mSequencers[13] = new Bseq(   883, 410, 66, 100, bBlanco);
+  mSequencers[14] = new Bseq(   948, 410, 66, 100, bBlanco);
+  mSequencers[15] = new Bseq(  1013, 410, 66, 100, bBlanco);
 
   // Buttons/pads
   // Boton(int _x, int _y, int _w, int _h, String _txt, uint8_t _rPage) { //// rPage=0 = all pages
-  mBoton[0]  = new Boton(    0, 520, 160, 100, "0",0);
-  mBoton[1]  = new Boton(  160, 520, 160, 100, "1",0);
-  mBoton[2]  = new Boton(  320, 520, 160, 100, "2",0);
-  mBoton[3]  = new Boton(  480, 520, 160, 100, "3",0);
-  mBoton[4]  = new Boton(  640, 520, 160, 100, "4",0);
-  mBoton[5]  = new Boton(  800, 520, 160, 100, "5",0);
-  mBoton[6]  = new Boton(  960, 520, 160, 100, "6",0);
-  mBoton[7]  = new Boton( 1120, 520, 160, 100, "7",0);
-  mBoton[8]  = new Boton(    0, 620, 160, 100, "8",0);
-  mBoton[9]  = new Boton(  160, 620, 160, 100, "9",0);
-  mBoton[10] = new Boton(  320, 620, 160, 100, "10",0);
-  mBoton[11] = new Boton(  480, 620, 160, 100, "11",0);
-  mBoton[12] = new Boton(  640, 620, 160, 100, "12",0);                      
-  mBoton[13] = new Boton(  800, 620, 160, 100, "13",0);
-  mBoton[14] = new Boton(  960, 620, 160, 100, "14",0);
-  mBoton[15] = new Boton( 1120, 620, 160, 100, "15",0);
+  mButtons[0]  = new Boton(    0, 520, 160, 100, "0",0);
+  mButtons[1]  = new Boton(  160, 520, 160, 100, "1",0);
+  mButtons[2]  = new Boton(  320, 520, 160, 100, "2",0);
+  mButtons[3]  = new Boton(  480, 520, 160, 100, "3",0);
+  mButtons[4]  = new Boton(  640, 520, 160, 100, "4",0);
+  mButtons[5]  = new Boton(  800, 520, 160, 100, "5",0);
+  mButtons[6]  = new Boton(  960, 520, 160, 100, "6",0);
+  mButtons[7]  = new Boton( 1120, 520, 160, 100, "7",0);
+  mButtons[8]  = new Boton(    0, 620, 160, 100, "8",0);
+  mButtons[9]  = new Boton(  160, 620, 160, 100, "9",0);
+  mButtons[10] = new Boton(  320, 620, 160, 100, "10",0);
+  mButtons[11] = new Boton(  480, 620, 160, 100, "11",0);
+  mButtons[12] = new Boton(  640, 620, 160, 100, "12",0);                      
+  mButtons[13] = new Boton(  800, 620, 160, 100, "13",0);
+  mButtons[14] = new Boton(  960, 620, 160, 100, "14",0);
+  mButtons[15] = new Boton( 1120, 620, 160, 100, "15",0);
 
-  mBoton[16] = new Boton(    0, 300, 160, 100, "PAD",0);
-  mBoton[17] = new Boton(  160, 100, 160, 100, "MELODIC",1);
-  mBoton[18] = new Boton(  640, 300, 160, 100, "RND PATTERN",0);
-  mBoton[19] = new Boton(  800, 300, 160, 100, "LOAD",0);
-  mBoton[20] = new Boton(  800, 100, 160, 100, "SAVE",1);
-  mBoton[22] = new Boton(  960, 300, 160, 100, "PLAY",0);
-  mBoton[23] = new Boton(  960, 100, 160, 100, "SONG",1);
-  mBoton[42] = new Boton( 1120, 410, 160, 100, "SHIFT",0);
-
-
-
-  mBoton[24] = new Boton(  160, 300, 160, 100, "MUTE",0);
-  mBoton[25] = new Boton(  320, 300, 160, 100, "SOLO",0);
-  mBoton[32] = new Boton(  480, 300, 160, 100, "RND SOUND",0);
-  mBoton[26] = new Boton(  320, 100, 160, 100, "STEP INIT",1);
-  mBoton[21] = new Boton(  640, 100, 160, 100, "PIANO",1);
-  mBoton[31] = new Boton(  480, 100, 160, 100, "MEMORY",1);
-  mBoton[27] = new Boton(  960,   0, 160, 100, "SILENCE",1);
-  mBoton[41] = new Boton( 1120, 300, 160, 100, "-10",0);
-
-  mBoton[28] = new Boton(    0,   0, 160, 100, "SOUND",0);
-  mBoton[29] = new Boton(    0, 100, 160, 100, "GLOBAL",0);
-  mBoton[30] = new Boton(    0, 200, 160, 100, "FX",0);
-
-  mBoton[38] = new Boton( 1120,   0, 160, 100, "+10",0);
-  mBoton[39] = new Boton( 1120, 100, 160, 100, "+1",0);
-  mBoton[40] = new Boton( 1120, 200, 160, 100, "-1",0);
+  mButtons[16] = new Boton(    0, 300, 160, 100, "PAD",0);
+  mButtons[17] = new Boton(  160, 100, 160, 100, "MELODIC",1);
+  mButtons[18] = new Boton(  640, 300, 160, 100, "RND PATTERN",0);
+  mButtons[19] = new Boton(  800, 300, 160, 100, "LOAD",0);
+  mButtons[20] = new Boton(  800, 100, 160, 100, "SAVE",1);
+  mButtons[22] = new Boton(  960, 300, 160, 100, "PLAY",0);
+  mButtons[23] = new Boton(  960, 100, 160, 100, "SONG",1);
+  mButtons[42] = new Boton( 1120, 410, 160, 100, "SHIFT",0);
 
 
-  mBoton[33] = new Boton(  160,   0, 160, 100, "REVERB",2);
-  mBoton[34] = new Boton(  480,   0, 160, 100, "DELAY",2);
-  mBoton[35] = new Boton(  160, 100, 160, 100, "CHORUS",2);
-  mBoton[36] = new Boton(  800,   0, 160, 100, "FLANGER",2);
-  mBoton[37] = new Boton(  480, 100, 160, 100, "TREMOLO",2);
-  mBoton[43] = new Boton(  800, 100, 160, 100, "RING MOD",2);
-  mBoton[44] = new Boton(  160, 200, 160, 100, "DISTORTION",2); 
-  mBoton[45] = new Boton(  480, 200, 160, 100, "BITCRUSHER",2); 
 
-  mBoton[46] = new Boton(  800, 200, 80, 100, "0",2); 
-  mBoton[47] = new Boton(  880, 200, 80, 100, "1",2); 
-  mBoton[48] = new Boton(  960, 200, 80, 100, "2",2); 
-  mBoton[49] = new Boton( 1040, 200, 80, 100, "3",2); 
+  mButtons[24] = new Boton(  160, 300, 160, 100, "MUTE",0);
+  mButtons[25] = new Boton(  320, 300, 160, 100, "SOLO",0);
+  mButtons[32] = new Boton(  480, 300, 160, 100, "RND SOUND",0);
+  mButtons[26] = new Boton(  320, 100, 160, 100, "STEP INIT",1);
+  mButtons[21] = new Boton(  640, 100, 160, 100, "PIANO",1);
+  mButtons[31] = new Boton(  480, 100, 160, 100, "MEMORY",1);
+  mButtons[27] = new Boton(  960,   0, 160, 100, "SILENCE",1);
+  mButtons[41] = new Boton( 1120, 300, 160, 100, "-10",0);
+
+  mButtons[28] = new Boton(    0,   0, 160, 100, "SOUND",0);
+  mButtons[29] = new Boton(    0, 100, 160, 100, "GLOBAL",0);
+  mButtons[30] = new Boton(    0, 200, 160, 100, "FX",0);
+
+  mButtons[38] = new Boton( 1120,   0, 160, 100, "+10",0);
+  mButtons[39] = new Boton( 1120, 100, 160, 100, "+1",0);
+  mButtons[40] = new Boton( 1120, 200, 160, 100, "-1",0);
+
+
+  mButtons[33] = new Boton(  160,   0, 160, 100, "REVERB",2);
+  mButtons[34] = new Boton(  480,   0, 160, 100, "DELAY",2);
+  mButtons[35] = new Boton(  160, 100, 160, 100, "CHORUS",2);
+  mButtons[36] = new Boton(  800,   0, 160, 100, "FLANGER",2);
+  mButtons[37] = new Boton(  480, 100, 160, 100, "TREMOLO",2);
+  mButtons[43] = new Boton(  800, 100, 160, 100, "RING MOD",2);
+  mButtons[44] = new Boton(  160, 200, 160, 100, "DISTORTION",2); 
+  mButtons[45] = new Boton(  480, 200, 160, 100, "BITCRUSHER",2); 
+
+  mButtons[46] = new Boton(  800, 200, 80, 100, "0",2); 
+  mButtons[47] = new Boton(  880, 200, 80, 100, "1",2); 
+  mButtons[48] = new Boton(  960, 200, 80, 100, "2",2); 
+  mButtons[49] = new Boton( 1040, 200, 80, 100, "3",2); 
 
   // Rots/sliders/selectors
   // Rot(int _x, int _y, int _w, int _h, String _txt, uint8_t _pageRot, uint8_t _cc, uint8_t _rPage)
 
-  mRot[0] =  new Rot(  160,   0, 320, 200, "SAMPLE/WAVE", 0,48, 0);
-  mRot[1] =  new Rot(  160,   0, 320, 200, "SAMPLE/WAVE", 0,48, 0);
+  mRotators[0] =  new Rot(  160,   0, 320, 200, "SAMPLE/WAVE", 0,48, 0);
+  mRotators[1] =  new Rot(  160,   0, 320, 200, "SAMPLE/WAVE", 0,48, 0);
 
-  mRot[2] =  new Rot(  480,   0, 160,  50, "A",           0,49, 0);
-  mRot[3] =  new Rot(  480,  50, 160,  50, "D",           0,50, 0);
-  mRot[4] =  new Rot(  480, 100, 160,  50, "S",           0,51, 0);
-  mRot[5] =  new Rot(  480, 150, 160,  50, "R",           0,52, 0);
-  mRot[6] =  new Rot(  640,   0, 160,  50, "INI",         0,53, 0);
-  mRot[7] =  new Rot(  640,  50, 160,  50, "END",         0,54, 0);
-  mRot[8] =  new Rot(  640, 100, 160,  50, "REVERSE",     0,99, 0);
+  mRotators[2] =  new Rot(  480,   0, 160,  50, "A",           0,49, 0);
+  mRotators[3] =  new Rot(  480,  50, 160,  50, "D",           0,50, 0);
+  mRotators[4] =  new Rot(  480, 100, 160,  50, "S",           0,51, 0);
+  mRotators[5] =  new Rot(  480, 150, 160,  50, "R",           0,52, 0);
+  mRotators[6] =  new Rot(  640,   0, 160,  50, "INI",         0,53, 0);
+  mRotators[7] =  new Rot(  640,  50, 160,  50, "END",         0,54, 0);
+  mRotators[8] =  new Rot(  640, 100, 160,  50, "REVERSE",     0,99, 0);
 
-  mRot[9] =  new Rot(  800,   0, 160,  50, "ENVELOPE",    1,48, 0);
-  mRot[10] = new Rot(  800,  50, 160,  50, "LEN",         1,49, 0);
-  mRot[11] = new Rot(  800, 100, 160,  50, "MOD",         1,50, 0);
-  mRot[40] = new Rot(  800, 150, 160,  50, "DETUNE",      1,51, 0);
-  mRot[39] = new Rot(  800, 200, 160,  50, "ADD NEXT SND",0,55, 0);
+  mRotators[9] =  new Rot(  800,   0, 160,  50, "ENVELOPE",    1,48, 0);
+  mRotators[10] = new Rot(  800,  50, 160,  50, "LEN",         1,49, 0);
+  mRotators[11] = new Rot(  800, 100, 160,  50, "MOD",         1,50, 0);
+  mRotators[40] = new Rot(  800, 150, 160,  50, "DETUNE",      1,51, 0);
+  mRotators[39] = new Rot(  800, 200, 160,  50, "ADD NEXT SND",0,55, 0);
 
 
-  mRot[14] = new Rot(  960,   0, 160,  50, "VOL",         1,52, 0);
-  mRot[13] = new Rot(  960,  50, 160,  50, "PAN",         1,53, 0);
-  mRot[12] = new Rot(  960, 100, 160,  50, "PITCH",       1,54, 0);
-  mRot[15] = new Rot(  960, 150, 160,  50, "FILTER",      1,55, 0);
-  mRot[16] = new Rot(  960, 200, 160,  50, "TYPE",        1,99, 0);
-
-//
-  mRot[24] = new Rot(  160,   0, 160,  50, "M VOL",       2,48, 1);
-  mRot[18] = new Rot(  320,   0, 160,  50, "TRANSPOSE",   2,49, 1);
-  mRot[22] = new Rot(  480,   0, 160,  50, "BPM",         2,50, 1);
-  mRot[19] = new Rot(  640,   0, 160,  50, "OCT",         2,51, 1);
-
-  mRot[17] = new Rot(  160,  50, 160,  50, "M PITCH",     2,52, 1);
-  mRot[25] = new Rot(  320,  50, 160,  50, "M FILTER",    2,53, 1);
-  mRot[20] = new Rot(  480,  50, 160,  50, "SCALE",       2,54, 1);
-  mRot[23] = new Rot(  800,   0, 160,  50, "MOVE",        2,55, 1);
-
-  mRot[21] = new Rot(  640,  50, 160,  50, "SYNC",        2,99, 1);
-  mRot[26] = new Rot(  800,  50, 160,  50, "SONG MODE",   2,99, 1);
+  mRotators[14] = new Rot(  960,   0, 160,  50, "VOL",         1,52, 0);
+  mRotators[13] = new Rot(  960,  50, 160,  50, "PAN",         1,53, 0);
+  mRotators[12] = new Rot(  960, 100, 160,  50, "PITCH",       1,54, 0);
+  mRotators[15] = new Rot(  960, 150, 160,  50, "FILTER",      1,55, 0);
+  mRotators[16] = new Rot(  960, 200, 160,  50, "TYPE",        1,99, 0);
 
 //
+  mRotators[24] = new Rot(  160,   0, 160,  50, "M VOL",       2,48, 1);
+  mRotators[18] = new Rot(  320,   0, 160,  50, "TRANSPOSE",   2,49, 1);
+  mRotators[22] = new Rot(  480,   0, 160,  50, "BPM",         2,50, 1);
+  mRotators[19] = new Rot(  640,   0, 160,  50, "OCT",         2,51, 1);
 
-  mRot[27] = new Rot(  320,  0, 160,  50, "R LEVEL",       3,48, 2); // r
-  mRot[28] = new Rot(  640,  0, 160,  50, "D LEVEL",       3,49, 2); // d
-  mRot[29] = new Rot(  320,100, 160,  50, "C LEVEL",       3,51, 2); // c
-  mRot[30] = new Rot(  960,  0, 160,  50, "F LEVEL",       3,50, 2); // f
-  mRot[31] = new Rot(  640,100, 160,  50, "T LEVEL",       3,52, 2); // t
-  mRot[37] = new Rot(  960,100, 160,  50, "RM LEVEL",      3,53, 2); // rm
+  mRotators[17] = new Rot(  160,  50, 160,  50, "M PITCH",     2,52, 1);
+  mRotators[25] = new Rot(  320,  50, 160,  50, "M FILTER",    2,53, 1);
+  mRotators[20] = new Rot(  480,  50, 160,  50, "SCALE",       2,54, 1);
+  mRotators[23] = new Rot(  800,   0, 160,  50, "MOVE",        2,55, 1);
 
-  mRot[32] = new Rot(  320,  50, 160,  50, "R TYPE",        4,48, 2);
-  mRot[33] = new Rot(  640,  50, 160,  50, "D TIME",        4,49, 2);
-  mRot[34] = new Rot(  320, 150, 160,  50, "C TYPE",        4,51, 2);
-  mRot[35] = new Rot(  960,  50, 160,  50, "F TYPE",        4,50, 2);
-  mRot[36] = new Rot(  640, 150, 160,  50, "T TYPE",        4,52, 2);
-  mRot[38] = new Rot(  960, 150, 160,  50, "RM TYPE",       4,53, 2);
+  mRotators[21] = new Rot(  640,  50, 160,  50, "SYNC",        2,99, 1);
+  mRotators[26] = new Rot(  800,  50, 160,  50, "SONG MODE",   2,99, 1);
 
-  mRot[41] = new Rot(  320, 200, 160,  50, "D LEVEL",       3,54, 2); // level 
-  mRot[42] = new Rot(  320, 250, 160,  50, "D TYPE",        4,54, 2); // type 
+//
 
-  mRot[43] = new Rot(  640, 200, 160,  50, "B LEVEL",       3,55, 2); // level 
-  mRot[44] = new Rot(  640, 250, 160,  50, "B TYPE",        4,55, 2); // type 
+  mRotators[27] = new Rot(  320,  0, 160,  50, "R LEVEL",       3,48, 2); // r
+  mRotators[28] = new Rot(  640,  0, 160,  50, "D LEVEL",       3,49, 2); // d
+  mRotators[29] = new Rot(  320,100, 160,  50, "C LEVEL",       3,51, 2); // c
+  mRotators[30] = new Rot(  960,  0, 160,  50, "F LEVEL",       3,50, 2); // f
+  mRotators[31] = new Rot(  640,100, 160,  50, "T LEVEL",       3,52, 2); // t
+  mRotators[37] = new Rot(  960,100, 160,  50, "RM LEVEL",      3,53, 2); // rm
+
+  mRotators[32] = new Rot(  320,  50, 160,  50, "R TYPE",        4,48, 2);
+  mRotators[33] = new Rot(  640,  50, 160,  50, "D TIME",        4,49, 2);
+  mRotators[34] = new Rot(  320, 150, 160,  50, "C TYPE",        4,51, 2);
+  mRotators[35] = new Rot(  960,  50, 160,  50, "F TYPE",        4,50, 2);
+  mRotators[36] = new Rot(  640, 150, 160,  50, "T TYPE",        4,52, 2);
+  mRotators[38] = new Rot(  960, 150, 160,  50, "RM TYPE",       4,53, 2);
+
+  mRotators[41] = new Rot(  320, 200, 160,  50, "D LEVEL",       3,54, 2); // level 
+  mRotators[42] = new Rot(  320, 250, 160,  50, "D TYPE",        4,54, 2); // type 
+
+  mRotators[43] = new Rot(  640, 200, 160,  50, "B LEVEL",       3,55, 2); // level 
+  mRotators[44] = new Rot(  640, 250, 160,  50, "B TYPE",        4,55, 2); // type 
 
 }
 
