@@ -1,88 +1,236 @@
-// Load selected memory from flash into memory_ arrays
-void load_memory(){ 
-  for (byte f = 0; f < 16; f++) {
-    load_pattern_mem(f);
-    load_sound_mem(f);
+// Load the entire project block from the SD Card for the active selected_memory
+void load_memory() { 
+  if (!load_project_file(selected_memory)) {
+    load_memory_defaults();
+    // Load channel 0 data into active RAM as a safe fallback
+    load_pattern(0);
+    load_sound(0);
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-// Read pattern data from internal SPIFFS Partition
-void load_pattern_mem(uint8_t pat){
-  String patternFileName = "/PAT" + String(pat) + "_" + String(selected_memory);
-  File patternFile = SPIFFS.open(patternFileName, FILE_READ);   
-  if (!patternFile) {
-    Serial.println("Error opening pattern file for reading from SPIFFS");
-    // Clean memory arrays as safe fallback
-    memset(memory_pattern[pat], 0, sizeof(memory_pattern[pat]));
-    memset(memory_melodic[pat], 0, sizeof(memory_melodic[pat]));
-    return;
+// Safety RAM initializer when no save file is present
+void load_memory_defaults() {
+  Serial.println("[STORAGE] No project file found. Initializing RAM with clean defaults...");
+  
+  // Clear pattern caches safely (set to 0)
+  memset(memory_pattern, 0, sizeof(memory_pattern));
+  memset(memory_melodic, 0, sizeof(memory_melodic));
+  
+  // Populate default melodic pitch to 60 (Middle C) instead of 0 to protect DSP filter math
+  for (int slot = 0; slot < 16; slot++) {
+    for (int ch = 0; ch < 16; ch++) {
+      for (int step = 0; step < 16; step++) {
+        memory_melodic[slot][ch][step] = 60;
+      }
+    }
   }
-  patternFile.read((uint8_t*)memory_pattern[pat], sizeof(memory_pattern[pat]));
-  patternFile.read((uint8_t*)memory_melodic[pat], sizeof(memory_melodic[pat]));
-  patternFile.close();
+
+  // Copy default factory parameters (ROTvalue) into all 16 memory slots in RAM
+  for (int slot = 0; slot < 16; slot++) {
+    memcpy(memory_ROTvalue[slot], ROTvalue, sizeof(ROTvalue));
+  }
 }
 
-// Read sound data from internal SPIFFS Partition
-void load_sound_mem(uint8_t pat){
-  String soundFileName = "/SND" + String(pat) + "_" + String(selected_memory);
-  File soundFile = SPIFFS.open(soundFileName, FILE_READ);
-  if (!soundFile) {
-    Serial.println("Error opening sound file for reading from SPIFFS");
-    // Clean memory array as safe fallback
-    memset(memory_ROTvalue[pat], 0, sizeof(memory_ROTvalue[pat]));    
-    return;
+// Write the entire workspace session into a single binary file on the SD Card
+bool save_project_file(uint8_t slot) {
+  String projectFileName = "/Vsampler/saves/PRJ_" + String(slot) + ".BIN";
+  File projectFile = SD.open(projectFileName, FILE_WRITE);
+  if (!projectFile) {
+    Serial.println("[STORAGE ERROR] Unable to create project file on SD Card!");
+    return false;
   }
-  soundFile.read((uint8_t*)memory_ROTvalue[pat], sizeof(memory_ROTvalue[pat]));
-  soundFile.close();
-  flag_ss = true; 
+
+  // 1. Write File Header (Header & Version for future compatibility)
+  char fileHeader[4] = {'V', 'S', 'M', 'P'};
+  projectFile.write((uint8_t*)fileHeader, 4);
+  uint16_t fileVersion = 1;
+  projectFile.write((uint8_t*)&fileVersion, 2);
+
+  // 2. Serialize Global System Parameters
+  projectFile.write((uint8_t*)&bpm, sizeof(bpm));
+  projectFile.write((uint8_t*)&master_vol, sizeof(master_vol));
+  projectFile.write((uint8_t*)&master_filter, sizeof(master_filter));
+  projectFile.write((uint8_t*)&selected_scale, sizeof(selected_scale));
+  projectFile.write((uint8_t*)&sync_state, sizeof(sync_state));
+  projectFile.write((uint8_t*)&song_mode, sizeof(song_mode));
+  projectFile.write((uint8_t*)&mutes, sizeof(mutes));
+  projectFile.write((uint8_t*)&solos, sizeof(solos));
+
+  // 3. Serialize FX Rack Parameters (On/Off, Sends, Levels and Algorithms)
+  projectFile.write((uint8_t*)&reverbs, sizeof(reverbs));
+  projectFile.write((uint8_t*)&delays, sizeof(delays));
+  projectFile.write((uint8_t*)&choruss, sizeof(choruss));
+  projectFile.write((uint8_t*)&flangers, sizeof(flangers));
+  projectFile.write((uint8_t*)&tremolos, sizeof(tremolos));
+  projectFile.write((uint8_t*)&ringmods, sizeof(ringmods));
+  projectFile.write((uint8_t*)&distortions, sizeof(distortions));
+  projectFile.write((uint8_t*)&bitcrushers, sizeof(bitcrushers));
+
+  projectFile.write((uint8_t*)&level_reverb, sizeof(level_reverb));
+  projectFile.write((uint8_t*)&level_delay, sizeof(level_delay));
+  projectFile.write((uint8_t*)&level_chorus, sizeof(level_chorus));
+  projectFile.write((uint8_t*)&level_flanger, sizeof(level_flanger));
+  projectFile.write((uint8_t*)&level_tremolo, sizeof(level_tremolo));
+  projectFile.write((uint8_t*)&level_ringmod, sizeof(level_ringmod));
+  projectFile.write((uint8_t*)&level_distortion, sizeof(level_distortion));
+  projectFile.write((uint8_t*)&level_bitcrusher, sizeof(level_bitcrusher));
+
+  projectFile.write((uint8_t*)&reverb_type, sizeof(reverb_type));
+  projectFile.write((uint8_t*)&delay_time, sizeof(delay_time));
+  projectFile.write((uint8_t*)&chorus_type, sizeof(chorus_type));
+  projectFile.write((uint8_t*)&flanger_type, sizeof(flanger_type));
+  projectFile.write((uint8_t*)&tremolo_type, sizeof(tremolo_type));
+  projectFile.write((uint8_t*)&ringmod_type, sizeof(ringmod_type));
+  projectFile.write((uint8_t*)&distortion_type, sizeof(distortion_type));
+  projectFile.write((uint8_t*)&bitcrusher_type, sizeof(bitcrusher_type));
+
+  // 4. Serialize Active Channel Parameters currently in RAM
+  projectFile.write((uint8_t*)pattern, sizeof(pattern));
+  projectFile.write((uint8_t*)melodic, sizeof(melodic));
+  projectFile.write((uint8_t*)ROTvalue, sizeof(ROTvalue));
+
+  // 5. Serialize Memory Cache Slots (0-15)
+  projectFile.write((uint8_t*)memory_pattern, sizeof(memory_pattern));
+  projectFile.write((uint8_t*)memory_melodic, sizeof(memory_melodic));
+  projectFile.write((uint8_t*)memory_ROTvalue, sizeof(memory_ROTvalue));
+
+  projectFile.close();
+  Serial.printf("[STORAGE] Project saved successfully to Slot %d on SD Card!\n", slot);
+  return true;
 }
 
-// Copy the pattern active and melodic arrays from selected slot into active RAM
-void load_pattern(uint8_t pat){
+// Load the entire consolidated project state from a single binary file on the SD Card
+bool load_project_file(uint8_t slot) {
+  String projectFileName = "/Vsampler/saves/PRJ_" + String(slot) + ".BIN";
+  File projectFile = SD.open(projectFileName, FILE_READ);
+  if (!projectFile) {
+    Serial.printf("[STORAGE] Project %d not found on SD Card.\n", slot);
+    return false;
+  }
+
+  // 1. Read and validate Magic Header
+  char fileHeader[4];
+  projectFile.read((uint8_t*)fileHeader, 4);
+  if (fileHeader[0] != 'V' || fileHeader[1] != 'S' || fileHeader[2] != 'M' || fileHeader[3] != 'P') {
+    Serial.println("[STORAGE ERROR] Corrupted project file or invalid format!");
+    projectFile.close();
+    return false;
+  }
+  uint16_t fileVersion;
+  projectFile.read((uint8_t*)&fileVersion, 2);
+
+  // 2. Deserialize Global System Parameters
+  projectFile.read((uint8_t*)&bpm, sizeof(bpm));
+  projectFile.read((uint8_t*)&master_vol, sizeof(master_vol));
+  projectFile.read((uint8_t*)&master_filter, sizeof(master_filter));
+  projectFile.read((uint8_t*)&selected_scale, sizeof(selected_scale));
+  projectFile.read((uint8_t*)&sync_state, sizeof(sync_state));
+  projectFile.read((uint8_t*)&song_mode, sizeof(song_mode));
+  projectFile.read((uint8_t*)&mutes, sizeof(mutes));
+  projectFile.read((uint8_t*)&solos, sizeof(solos));
+
+  // 3. Deserialize FX Rack Parameters
+  projectFile.read((uint8_t*)&reverbs, sizeof(reverbs));
+  projectFile.read((uint8_t*)&delays, sizeof(delays));
+  projectFile.read((uint8_t*)&choruss, sizeof(choruss));
+  projectFile.read((uint8_t*)&flangers, sizeof(flangers));
+  projectFile.read((uint8_t*)&tremolos, sizeof(tremolos));
+  projectFile.read((uint8_t*)&ringmods, sizeof(ringmods));
+  projectFile.read((uint8_t*)&distortions, sizeof(distortions));
+  projectFile.read((uint8_t*)&bitcrushers, sizeof(bitcrushers));
+
+  projectFile.read((uint8_t*)&level_reverb, sizeof(level_reverb));
+  projectFile.read((uint8_t*)&level_delay, sizeof(level_delay));
+  projectFile.read((uint8_t*)&level_chorus, sizeof(level_chorus));
+  projectFile.read((uint8_t*)&level_flanger, sizeof(level_flanger));
+  projectFile.read((uint8_t*)&level_tremolo, sizeof(level_tremolo));
+  projectFile.read((uint8_t*)&level_ringmod, sizeof(level_ringmod));
+  projectFile.read((uint8_t*)&level_distortion, sizeof(level_distortion));
+  projectFile.read((uint8_t*)&level_bitcrusher, sizeof(level_bitcrusher));
+
+  projectFile.read((uint8_t*)&reverb_type, sizeof(reverb_type));
+  projectFile.read((uint8_t*)&delay_time, sizeof(delay_time));
+  projectFile.read((uint8_t*)&chorus_type, sizeof(chorus_type));
+  projectFile.read((uint8_t*)&flanger_type, sizeof(flanger_type));
+  projectFile.read((uint8_t*)&tremolo_type, sizeof(tremolo_type));
+  projectFile.read((uint8_t*)&ringmod_type, sizeof(ringmod_type));
+  projectFile.read((uint8_t*)&distortion_type, sizeof(distortion_type));
+  projectFile.read((uint8_t*)&bitcrusher_type, sizeof(bitcrusher_type));
+
+  // 4. Deserialize Active Channel Parameters
+  projectFile.read((uint8_t*)pattern, sizeof(pattern));
+  projectFile.read((uint8_t*)melodic, sizeof(melodic));
+  projectFile.read((uint8_t*)ROTvalue, sizeof(ROTvalue));
+
+  // 5. Deserialize Memory Cache Slots
+  projectFile.read((uint8_t*)memory_pattern, sizeof(memory_pattern));
+  projectFile.read((uint8_t*)memory_melodic, sizeof(memory_melodic));
+  projectFile.read((uint8_t*)memory_ROTvalue, sizeof(memory_ROTvalue));
+
+  projectFile.close();
+
+  // Force immediate hardware updates for clock and mixer engine
+  seq.setBPM(bpm);
+  synthESP32_setMVol(master_vol);
+  synthESP32_setMFilter(master_filter);
+  
+  // Force immediate parameter updates for all active FX processors
+  myReverb.setPreset(reverb_type);
+  myDelay.setTime(map(delay_time, 0, 255, 100, 88000));
+  myChorus.setPreset(chorus_type);
+  myFlanger.setPreset(flanger_type);
+  myTremolo.setPreset(tremolo_type);
+  myRingMod.setPreset(ringmod_type);
+  myDistortion.setPreset(distortion_type);
+  myBitcrusher.setPreset(bitcrusher_type);
+
+  Serial.printf("[STORAGE] Project %d loaded successfully from SD Card!\n", slot);
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+// Legacy wrappers kept for compilation compatibility with active screen keys
+void load_pattern_mem(uint8_t pat) {
+  // Purposefully left empty: loading is handled in a single block by load_project_file()
+}
+
+// Legacy wrappers kept for compilation compatibility with active screen keys
+void load_sound_mem(uint8_t pat) {
+  // Purposefully left empty: loading is handled in a single block by load_project_file()
+}
+
+// Copy pattern and melodic data of the chosen cache slot into active RAM channels
+void load_pattern(uint8_t pat) {
   memcpy(pattern, memory_pattern[pat], sizeof(pattern));
   memcpy(melodic, memory_melodic[pat], sizeof(melodic));
 }
 
-// Copy active sound parameters from selected slot into active RAM
-void load_sound(uint8_t pat){
-   memcpy(ROTvalue, memory_ROTvalue[pat], sizeof(ROTvalue));
-   for (byte f = 0; f < 16; f++){
-     detune[f] = ROTvalue[f][17];
-     addnextsnd[f] = ROTvalue[f][18];
-     isMelodic[f] = ROTvalue[f][19];
-   }
+// Copy synth and sample configuration parameters from cache slot to active RAM
+void load_sound(uint8_t pat) {
+  memcpy(ROTvalue, memory_ROTvalue[pat], sizeof(ROTvalue));
+  for (byte f = 0; f < 16; f++) {
+    detune[f] = ROTvalue[f][17];
+    addnextsnd[f] = ROTvalue[f][18];
+    isMelodic[f] = ROTvalue[f][19];
+  }
 }
 
-// Save current active pattern and melodic data to internal SPIFFS Partition
-void save_pattern(uint8_t pat){
-  String patternFileName = "/PAT" + String(pat) + "_" + String(selected_memory);
-  File patternFile = SPIFFS.open(patternFileName, FILE_WRITE);   
-  if (!patternFile) {
-    Serial.println("Error opening pattern file for writing to SPIFFS");
-    return;
-  }
-  patternFile.write((uint8_t*)pattern, sizeof(pattern));
-  patternFile.write((uint8_t*)melodic, sizeof(melodic));
-  patternFile.close();
-
-  // Sync memory cache structure with the newly saved active RAM
+// Sync active pattern RAM state with cache matrix and trigger project-wide SD Card write
+void save_pattern(uint8_t pat) {
   memcpy(memory_pattern[pat], pattern, sizeof(pattern));
   memcpy(memory_melodic[pat], melodic, sizeof(melodic));
+
+  // Write entire project buffer to SD Card
+  save_project_file(selected_memory);
 }
 
-// Save current active sound settings to internal SPIFFS Partition
-void save_sound(uint8_t pat){
-  String soundFileName = "/SND" + String(pat) + "_" + String(selected_memory);
-  File soundFile = SPIFFS.open(soundFileName, FILE_WRITE); 
-  if (!soundFile) {
-    Serial.println("Error opening sound file for writing to SPIFFS");
-    return;
-  }
-  soundFile.write((uint8_t*)ROTvalue, sizeof(ROTvalue));
-  soundFile.close();
-
-  // Sync memory cache structure with the newly saved active RAM
+// Sync active sound parameter RAM state with cache matrix and trigger project-wide SD Card write
+void save_sound(uint8_t pat) {
   memcpy(memory_ROTvalue[pat], ROTvalue, sizeof(ROTvalue));
+
+  // Write entire project buffer to SD Card
+  save_project_file(selected_memory);
 }
