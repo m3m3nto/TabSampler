@@ -1,8 +1,7 @@
-////////////////////////////
-// DRUM SAMPLER 2026 TAB5 //
-////////////////////////////
-// zcarlos 2026 / Refactored Device MIDI Sync 2026
-// V1.4 - Pristine English Base Code (No Compatibility Hacks)
+//////////////////////////////////
+// DRUM SAMPLER 2026 TAB5       //
+//////////////////////////////////
+// V1.9.0 - Hybrid Storage: SPIFFS for Saves & SD for WAV Samples
 
 // Includes
 #include <Arduino.h>
@@ -10,6 +9,10 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include "freertos/semphr.h"
+
+// File System Headers (Must be declared at the top for global tab visibility)
+#include <FS.h>
+#include <SPIFFS.h>
 
 #include "button.h"
 #include "rot.h"
@@ -97,10 +100,6 @@ int old_counter1 = 0;
 byte shiftR1 = false;
 byte old_shiftR1 = true;
 int cox, coy, coz;
-
-// Internal File System
-#include <FS.h>
-#include <SPIFFS.h>
 
 // Audio Synthesis and DSP Tables
 #include "tablesESP32_E.h"
@@ -409,21 +408,68 @@ uint16_t read16(File& f) {
 }
 
 void loadWavsToPSRAM() {
-  M5.Display.setTextSize(3);
+  M5.Display.setTextSize(2);
+  M5.Display.setTextColor(TFT_WHITE);
+  M5.Display.fillScreen(TFT_BLACK);
+  M5.Display.setCursor(10, 10);
+  M5.Display.println("Initializing SD Card...");
+  delay(100); // Allow hardware lines to stabilize
+
   SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
   if (!SD.begin(SD_SPI_CS_PIN, SPI, 40000000)) {
-    M5.Display.println("Error: SD not detected!");
+    M5.Display.setTextColor(TFT_RED);
+    M5.Display.println("Error: SD Card not detected!");
+    M5.Display.println("Please insert SD and restart.");
+    delay(3000); // Diagnostic hold
     return;
   }
 
-  M5.Display.println("SD OK. Loading samples...");
-  File root = SD.open("/");
+  // Create required path on SD if it does not exist
+  if (!SD.exists("/Vsampler")) {
+    SD.mkdir("/Vsampler");
+  }
+  if (!SD.exists("/Vsampler/samples")) {
+    SD.mkdir("/Vsampler/samples");
+  }
+
+  M5.Display.fillScreen(TFT_BLACK);
+  M5.Display.setCursor(10, 10);
+  M5.Display.setTextColor(TFT_CYAN);
+  M5.Display.println("Loading WAV samples from SD...");
+  M5.Display.println("--------------------------------");
+
+  File root = SD.open("/Vsampler/samples");
+  if (!root || !root.isDirectory()) {
+    M5.Display.setTextColor(TFT_RED);
+    M5.Display.println("Error: /Vsampler/samples dir missing!");
+    delay(3000); // Diagnostic hold
+    return;
+  }
+
   File file = root.openNextFile();
   size_t currentRamUsage = 0;
   samplesTotal = 0;
+  int displayY = 40;
+
+  M5.Display.setTextSize(1); // Smaller font size to support multiple print lines
 
   while (file && samplesTotal < MAX_SAMPLES_COUNT) {
-    if (!file.isDirectory() && String(file.name()).endsWith(".wav")) {
+    String fullPath = String(file.name());
+    
+    // Extract base filename without the path prefix
+    int lastSlash = fullPath.lastIndexOf('/');
+    String baseName = (lastSlash >= 0) ? fullPath.substring(lastSlash + 1) : fullPath;
+    
+    // Check extension safely (ignoring case)
+    String lowerName = baseName;
+    lowerName.toLowerCase();
+
+    if (!file.isDirectory() && lowerName.endsWith(".wav")) {
+      // Print loading progress in real time
+      M5.Display.setCursor(10, displayY);
+      M5.Display.setTextColor(TFT_WHITE);
+      M5.Display.printf("[%02d] %-20s", samplesTotal, baseName.substring(0, (baseName.length() > 20) ? 20 : baseName.length()).c_str());
+
       bool isValid = true;
       uint32_t dataSize = 0;
       uint32_t dataOffset = 0;
@@ -459,23 +505,52 @@ void loadWavsToPSRAM() {
             file.seek(dataOffset);
             file.read((uint8_t*)ptr, dataSize);
             SAMPLES[samplesTotal] = ptr;
-            SAMPLE_NAMES[samplesTotal] = String(samplesTotal) + " " + String(file.name());
+            SAMPLE_NAMES[samplesTotal] = String(samplesTotal) + " " + baseName;
             ENDS[samplesTotal] = (dataSize / 2) - 1;
             currentRamUsage += dataSize;
+            
+            M5.Display.setTextColor(TFT_GREEN);
+            M5.Display.print(" - OK");
             samplesTotal++;
+          } else {
+            M5.Display.setTextColor(TFT_RED);
+            M5.Display.print(" - RAM ERR");
           }
         } else {
+          M5.Display.setTextColor(TFT_YELLOW);
+          M5.Display.print(" - RAM LIMIT");
           file.close();
           break;
         }
+      } else {
+        M5.Display.setTextColor(TFT_RED);
+        M5.Display.print(" - FMT ERR");
+      }
+
+      displayY += 10;
+      if (displayY > 210) {
+        // Wrap rendering to avoid off-screen overflow
+        delay(100);
+        M5.Display.fillScreen(TFT_BLACK);
+        M5.Display.setTextSize(2);
+        M5.Display.setCursor(10, 10);
+        M5.Display.setTextColor(TFT_CYAN);
+        M5.Display.println("Loading WAV samples (cont)...");
+        M5.Display.println("--------------------------------");
+        M5.Display.setTextSize(1);
+        displayY = 40;
       }
     }
     file.close();
     file = root.openNextFile();
   }
-  M5.Display.printf("Loaded: %d Samples\n", samplesTotal);
-  M5.Display.setTextSize(1);
-  delay(1000);
+  root.close();
+
+  M5.Display.setTextSize(2);
+  M5.Display.setCursor(10, 220);
+  M5.Display.setTextColor(TFT_GREEN);
+  M5.Display.printf("Loaded: %d Samples", samplesTotal);
+  delay(1500); // Final diagnostic hold
 }
 
 void checkJackStatus() {
@@ -529,17 +604,20 @@ void setup() {
   init_colors();
   M5.Display.fillScreen(TFT_BLACK);
 
+  // Initialize PSRAM WAV database from SD Card
   loadWavsToPSRAM();
   M5.Display.setTextSize(2);
 
+  // Initialize Internal DSP Synthesis Engine
   synthESP32_begin();
   synthESP32_setMVol(0);
   setSoundALL();
   initADSR();
   synthESP32_setMFilter(master_filter);
 
+  // Initialize internal SPIFFS Partition for patterns & sounds save-state
   if (!SPIFFS.begin(true)) {
-    // Silent fallback for SPIFFS
+    Serial.println("SPIFFS initialization failed!");
   }
 
   M5.Display.fillScreen(TFT_BLACK);
