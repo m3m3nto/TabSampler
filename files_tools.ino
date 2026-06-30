@@ -10,15 +10,14 @@ void load_memory() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-// Safety RAM initializer when no save file is present
+// Safety RAM initializer when no save file is present or file is outdated
 void load_memory_defaults() {
-  Serial.println("[STORAGE] No project file found. Initializing RAM with clean defaults...");
+  Serial.println("[STORAGE] No project file found or version mismatch. Initializing RAM with clean defaults...");
   
   // Clear pattern caches safely (set to 0)
   memset(memory_pattern, 0, sizeof(memory_pattern));
-  memset(memory_melodic, 0, sizeof(memory_melodic));
   
-  // Populate default melodic pitch to 60 (Middle C) instead of 0 to protect DSP filter math
+  // Populate default melodic pitch to 60 (Middle C) to protect DSP filter math
   for (int slot = 0; slot < 16; slot++) {
     for (int ch = 0; ch < 16; ch++) {
       for (int step = 0; step < 16; step++) {
@@ -45,7 +44,7 @@ bool save_project_file(uint8_t slot) {
   // 1. Write File Header (Header & Version for future compatibility)
   char fileHeader[4] = {'V', 'S', 'M', 'P'};
   projectFile.write((uint8_t*)fileHeader, 4);
-  uint16_t fileVersion = 1;
+  uint16_t fileVersion = 2; // Bumped version to 2 to automatically reject old corrupted test saves
   projectFile.write((uint8_t*)&fileVersion, 2);
 
   // 2. Serialize Global System Parameters
@@ -118,8 +117,15 @@ bool load_project_file(uint8_t slot) {
     projectFile.close();
     return false;
   }
+  
   uint16_t fileVersion;
   projectFile.read((uint8_t*)&fileVersion, 2);
+  // Refuse to load V1 files as they contain corrupted array data from previous tests
+  if (fileVersion != 2) {
+    Serial.println("[STORAGE ERROR] Outdated project file version. Loading safe defaults...");
+    projectFile.close();
+    return false;
+  }
 
   // 2. Deserialize Global System Parameters
   projectFile.read((uint8_t*)&bpm, sizeof(bpm));
@@ -171,6 +177,24 @@ bool load_project_file(uint8_t slot) {
 
   projectFile.close();
 
+  // --- BUG FIX: Aggressive Sanitization of loaded flags ---
+  for (byte f = 0; f < 16; f++) {
+    detune[f] = ROTvalue[f][17];
+    
+    // Sanitize polyphony bounds
+    if (ROTvalue[f][18] < 1 || ROTvalue[f][18] > 16) {
+      ROTvalue[f][18] = 1;
+    }
+    addnextsnd[f] = ROTvalue[f][18];
+
+    // Force strict 1/0 bounds on melodic flags and restore Synth defaults
+    if (f >= 8 && ROTvalue[f][19] == 0) ROTvalue[f][19] = 1;
+    if (ROTvalue[f][19] > 1) ROTvalue[f][19] = (f >= 8) ? 1 : 0;
+    
+    isMelodic[f] = ROTvalue[f][19];
+  }
+  // -------------------------------------------------------------------------------
+
   // Force immediate hardware updates for clock and mixer engine
   seq.setBPM(bpm);
   synthESP32_setMVol(master_vol);
@@ -186,6 +210,7 @@ bool load_project_file(uint8_t slot) {
   myDistortion.setPreset(distortion_type);
   myBitcrusher.setPreset(bitcrusher_type);
 
+  flag_ss = true;
   Serial.printf("[STORAGE] Project %d loaded successfully from SD Card!\n", slot);
   return true;
 }
@@ -210,12 +235,22 @@ void load_pattern(uint8_t pat) {
 
 // Copy synth and sample configuration parameters from cache slot to active RAM
 void load_sound(uint8_t pat) {
-  memcpy(ROTvalue, memory_ROTvalue[pat], sizeof(ROTvalue));
-  for (byte f = 0; f < 16; f++) {
-    detune[f] = ROTvalue[f][17];
-    addnextsnd[f] = ROTvalue[f][18];
-    isMelodic[f] = ROTvalue[f][19];
-  }
+   memcpy(ROTvalue, memory_ROTvalue[pat], sizeof(ROTvalue));
+   for (byte f = 0; f < 16; f++) {
+     detune[f] = ROTvalue[f][17];
+     
+     // Sanitize polyphony bounds
+     if (ROTvalue[f][18] < 1 || ROTvalue[f][18] > 16) {
+       ROTvalue[f][18] = 1;
+     }
+     addnextsnd[f] = ROTvalue[f][18];
+
+     // Force strict 1/0 bounds on melodic flags and restore Synth defaults
+     if (f >= 8 && ROTvalue[f][19] == 0) ROTvalue[f][19] = 1;
+     if (ROTvalue[f][19] > 1) ROTvalue[f][19] = (f >= 8) ? 1 : 0;
+     
+     isMelodic[f] = ROTvalue[f][19];
+   }
 }
 
 // Sync active pattern RAM state with cache matrix and trigger project-wide SD Card write
