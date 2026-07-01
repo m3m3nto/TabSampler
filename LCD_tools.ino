@@ -33,6 +33,8 @@ void setStatusMessage(String msg) {
 }
 
 void drawStatusBar() {
+  if (rPage == 2) return; // Hide completely on FX Page to restore full original layout space
+
   bool need_update = false;
 
   // Revert to default message after 3 seconds
@@ -54,10 +56,9 @@ void drawStatusBar() {
     last_statusbar_update = millis();
     last_status_msg = current_status_msg;
 
-    // Draw solid background to overwrite old data (Placed strictly above the center block)
-    // x=160, width=960, height=40
+    // Draw solid background aligned perfectly with rotators bounds (X=160, W=960)
     M5.Display.fillRect(160, 0, 960, 40, M5.Display.color565(30, 30, 40)); 
-    M5.Display.drawRect(160, 0, 960, 40, DARKGREY);
+    M5.Display.drawRect(160, 0, 959, 39, DARKGREY);
 
     M5.Display.setTextSize(2); // Large, readable font
 
@@ -74,7 +75,7 @@ void drawStatusBar() {
     // --- CENTER: IO Message ---
     M5.Display.setTextColor(ZYELLOW, M5.Display.color565(30, 30, 40));
     int tx = M5.Display.textWidth(current_status_msg);
-    M5.Display.setCursor(160 + 480 - (tx/2), 12); // Centered within the 960px block
+    M5.Display.setCursor(160 + 480 - (tx/2), 12); // Centered dynamically
     M5.Display.print(current_status_msg);
 
     // --- RIGHT: RAM Stats ---
@@ -920,9 +921,9 @@ void fillBPOS() {
   mButtons[39] = new Boton( 1120, 100, 160, 100, "+1", 0);
   mButtons[40] = new Boton( 1120, 200, 160, 100, "-1", 0);
 
-  // --- CENTER BLOCK (ALL SHIFTED Y +40 PIXELS) ---
+  // --- CENTER BLOCK (ONLY PAGES 0 and 1 SHIFTED Y +40 PIXELS) ---
   
-  // Center Buttons (Global Page)
+  // Center Buttons (Global Page - SHIFTED)
   mButtons[17] = new Boton(  160, 140, 160, 100, "MELODIC", 1);
   mButtons[20] = new Boton(  800, 140, 160, 100, "SAVE", 1);
   mButtons[23] = new Boton(  960, 140, 160, 100, "SONG", 1);
@@ -931,7 +932,7 @@ void fillBPOS() {
   mButtons[31] = new Boton(  480, 140, 160, 100, "MEMORY", 1);
   mButtons[27] = new Boton(  960,  40, 160, 100, "SILENCE", 1);
 
-  // Sound Page Rotators
+  // Sound Page Rotators (SHIFTED)
   mRotators[0] =  new Rot(  160,  40, 320, 200, "SAMPLE/WAVE", 0,48, 0);
   mRotators[1] =  new Rot(  160,  40, 320, 200, "SAMPLE/WAVE", 0,48, 0);
 
@@ -956,7 +957,7 @@ void fillBPOS() {
   mRotators[15] = new Rot(  960, 190, 160,  50, "FILTER",      1,55, 0);
   mRotators[16] = new Rot(  960, 240, 160,  50, "TYPE",        1,99, 0);
 
-  // Global Page Rotators
+  // Global Page Rotators (SHIFTED)
   mRotators[24] = new Rot(  160,  40, 160,  50, "M VOL",       2,48, 1);
   mRotators[18] = new Rot(  320,  40, 160,  50, "TRANSPOSE",   2,49, 1);
   mRotators[22] = new Rot(  480,  40, 160,  50, "BPM",         2,50, 1);
@@ -970,49 +971,44 @@ void fillBPOS() {
   mRotators[21] = new Rot(  640,  90, 160,  50, "SYNC",        2,99, 1);
   mRotators[26] = new Rot(  800,  90, 160,  50, "SONG MODE",   2,99, 1);
 
-  // --- FX PAGE REORGANIZATION ---
-  // To avoid overflowing into the Mute Row (Y=300) while accommodating the +40px shift,
-  // FX effects are safely arranged across 3 exact rows: Y=40, Y=125, and Y=210.
-  
-  // FX Row 1
-  mButtons[33]  = new Boton(  160,  40, 160,  85, "REVERB", 2);
-  mRotators[27] = new Rot(    320,  40, 160,  45, "R LEVEL",       3,48, 2); 
-  mRotators[32] = new Rot(    320,  85, 160,  45, "R TYPE",        4,48, 2);
+  // --- FX PAGE (ORIGINAL UNTOUCHED COORDINATES) ---
+  // Status Bar is hidden on Page 2, so effects get the full 300px height.
+  mButtons[33] = new Boton(  160,   0, 160, 100, "REVERB", 2);
+  mRotators[27] = new Rot(  320,   0, 160,  50, "R LEVEL",       3,48, 2); 
+  mRotators[32] = new Rot(  320,  50, 160,  50, "R TYPE",        4,48, 2);
 
-  mButtons[34]  = new Boton(  480,  40, 160,  85, "DELAY", 2);
-  mRotators[28] = new Rot(    640,  40, 160,  45, "D LEVEL",       3,49, 2); 
-  mRotators[33] = new Rot(    640,  85, 160,  45, "D TIME",        4,49, 2);
+  mButtons[34] = new Boton(  480,   0, 160, 100, "DELAY", 2);
+  mRotators[28] = new Rot(  640,   0, 160,  50, "D LEVEL",       3,49, 2); 
+  mRotators[33] = new Rot(  640,  50, 160,  50, "D TIME",        4,49, 2);
 
-  mButtons[36]  = new Boton(  800,  40, 160,  85, "FLANGER", 2);
-  mRotators[30] = new Rot(    960,  40, 160,  45, "F LEVEL",       3,50, 2); 
-  mRotators[35] = new Rot(    960,  85, 160,  45, "F TYPE",        4,50, 2);
+  mButtons[36] = new Boton(  800,   0, 160, 100, "FLANGER", 2);
+  mRotators[30] = new Rot(  960,   0, 160,  50, "F LEVEL",       3,50, 2); 
+  mRotators[35] = new Rot(  960,  50, 160,  50, "F TYPE",        4,50, 2);
 
-  // FX Row 2
-  mButtons[35]  = new Boton(  160, 125, 160,  85, "CHORUS", 2);
-  mRotators[29] = new Rot(    320, 125, 160,  45, "C LEVEL",       3,51, 2); 
-  mRotators[34] = new Rot(    320, 170, 160,  45, "C TYPE",        4,51, 2);
+  mButtons[35] = new Boton(  160, 100, 160, 100, "CHORUS", 2);
+  mRotators[29] = new Rot(  320, 100, 160,  50, "C LEVEL",       3,51, 2); 
+  mRotators[34] = new Rot(  320, 150, 160,  50, "C TYPE",        4,51, 2);
 
-  mButtons[37]  = new Boton(  480, 125, 160,  85, "TREMOLO", 2);
-  mRotators[31] = new Rot(    640, 125, 160,  45, "T LEVEL",       3,52, 2); 
-  mRotators[36] = new Rot(    640, 170, 160,  45, "T TYPE",        4,52, 2);
+  mButtons[37] = new Boton(  480, 100, 160, 100, "TREMOLO", 2);
+  mRotators[31] = new Rot(  640, 100, 160,  50, "T LEVEL",       3,52, 2); 
+  mRotators[36] = new Rot(  640, 150, 160,  50, "T TYPE",        4,52, 2);
 
-  mButtons[43]  = new Boton(  800, 125, 160,  85, "RING MOD", 2);
-  mRotators[37] = new Rot(    960, 125, 160,  45, "RM LEVEL",      3,53, 2); 
-  mRotators[38] = new Rot(    960, 170, 160,  45, "RM TYPE",       4,53, 2);
+  mButtons[43] = new Boton(  800, 100, 160, 100, "RING MOD", 2);
+  mRotators[37] = new Rot(  960, 100, 160,  50, "RM LEVEL",      3,53, 2); 
+  mRotators[38] = new Rot(  960, 150, 160,  50, "RM TYPE",       4,53, 2);
 
-  // FX Row 3
-  mButtons[44]  = new Boton(  160, 210, 160,  90, "DISTORTION", 2); 
-  mRotators[41] = new Rot(    320, 210, 160,  45, "D LEVEL",       3,54, 2); 
-  mRotators[42] = new Rot(    320, 255, 160,  45, "D TYPE",        4,54, 2); 
+  mButtons[44] = new Boton(  160, 200, 160, 100, "DISTORTION", 2); 
+  mRotators[41] = new Rot(  320, 200, 160,  50, "D LEVEL",       3,54, 2); 
+  mRotators[42] = new Rot(  320, 250, 160,  50, "D TYPE",        4,54, 2); 
 
-  mButtons[45]  = new Boton(  480, 210, 160,  90, "BITCRUSHER", 2); 
-  mRotators[43] = new Rot(    640, 210, 160,  45, "B LEVEL",       3,55, 2); 
-  mRotators[44] = new Rot(    640, 255, 160,  45, "B TYPE",        4,55, 2); 
+  mButtons[45] = new Boton(  480, 200, 160, 100, "BITCRUSHER", 2); 
+  mRotators[43] = new Rot(  640, 200, 160,  50, "B LEVEL",       3,55, 2); 
+  mRotators[44] = new Rot(  640, 250, 160,  50, "B TYPE",        4,55, 2); 
 
-  mButtons[46]  = new Boton(  800, 210,  80,  90, "0", 2); 
-  mButtons[47]  = new Boton(  880, 210,  80,  90, "1", 2); 
-  mButtons[48]  = new Boton(  960, 210,  80,  90, "2", 2); 
-  mButtons[49]  = new Boton( 1040, 210,  80,  90, "3", 2); 
+  mButtons[46] = new Boton(  800, 200,  80, 100, "0", 2); 
+  mButtons[47] = new Boton(  880, 200,  80, 100, "1", 2); 
+  mButtons[48] = new Boton(  960, 200,  80, 100, "2", 2); 
+  mButtons[49] = new Boton( 1040, 200,  80, 100, "3", 2); 
 }
 
 void refresh_shift_key() {
@@ -1160,8 +1156,16 @@ void REFRESH_PAGE() {
     refresh_rPage = false;
     if (rPage != old_rPage) {
       old_rPage = rPage;
-      // Clear zone offset by 40 to preserve Top Status Bar (height 260 ensures Mute row remains untouched)
-      M5.Display.fillRect(160, 40, 960, 260, BLACK);
+      
+      // Svuotiamo l'intera area centrale
+      M5.Display.fillRect(160, 0, 960, 300, BLACK);
+      
+      if (rPage != 2) {
+         last_status_msg = ""; 
+         last_statusbar_update = 0;
+         drawStatusBar();
+      }
+
       show_all_bars();
       refresh_sound_bars = true;
       refreshMODES = true;
