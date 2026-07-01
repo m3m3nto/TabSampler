@@ -1,3 +1,32 @@
+// ============================================================
+//  SD Bus Helper
+//  Open and close the SD bus around every save/load operation
+//  to prevent SPI bus contention with the I2S audio DMA.
+//  The bus is left CLOSED at all other times after setup().
+// ============================================================
+
+static bool sd_open_for_rw() {
+  SPI.begin(SD_SPI_SCK_PIN, SD_SPI_MISO_PIN, SD_SPI_MOSI_PIN, SD_SPI_CS_PIN);
+  if (!SD.begin(SD_SPI_CS_PIN, SPI, 20000000)) {
+    Serial.println("[STORAGE ERROR] SD Card not available for R/W!");
+    return false;
+  }
+  // Ensure save directory exists
+  if (!SD.exists("/Vsampler/saves")) {
+    SD.mkdir("/Vsampler/saves");
+  }
+  return true;
+}
+
+static void sd_close_after_rw() {
+  SD.end();
+  // SPI.end() is intentionally omitted: SPI.end() would also tear down
+  // the PSRAM bus on some ESP32-P4 builds. SD.end() is sufficient to
+  // release the CS line and stop SD transactions.
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
 // Load the entire project block from the SD Card for the active selected_memory
 void load_memory() { 
   if (!load_project_file(selected_memory)) {
@@ -34,10 +63,13 @@ void load_memory_defaults() {
 
 // Write the entire workspace session into a single binary file on the SD Card
 bool save_project_file(uint8_t slot) {
+  if (!sd_open_for_rw()) return false;
+
   String projectFileName = "/Vsampler/saves/PRJ_" + String(slot) + ".BIN";
   File projectFile = SD.open(projectFileName, FILE_WRITE);
   if (!projectFile) {
     Serial.println("[STORAGE ERROR] Unable to create project file on SD Card!");
+    sd_close_after_rw();
     return false;
   }
 
@@ -96,16 +128,21 @@ bool save_project_file(uint8_t slot) {
   projectFile.write((uint8_t*)memory_ROTvalue, sizeof(memory_ROTvalue));
 
   projectFile.close();
+  sd_close_after_rw();
+
   Serial.printf("[STORAGE] Project saved successfully to Slot %d on SD Card!\n", slot);
   return true;
 }
 
 // Load the entire consolidated project state from a single binary file on the SD Card
 bool load_project_file(uint8_t slot) {
+  if (!sd_open_for_rw()) return false;
+
   String projectFileName = "/Vsampler/saves/PRJ_" + String(slot) + ".BIN";
   File projectFile = SD.open(projectFileName, FILE_READ);
   if (!projectFile) {
     Serial.printf("[STORAGE] Project %d not found on SD Card.\n", slot);
+    sd_close_after_rw();
     return false;
   }
 
@@ -115,6 +152,7 @@ bool load_project_file(uint8_t slot) {
   if (fileHeader[0] != 'V' || fileHeader[1] != 'S' || fileHeader[2] != 'M' || fileHeader[3] != 'P') {
     Serial.println("[STORAGE ERROR] Corrupted project file or invalid format!");
     projectFile.close();
+    sd_close_after_rw();
     return false;
   }
   
@@ -124,6 +162,7 @@ bool load_project_file(uint8_t slot) {
   if (fileVersion != 2) {
     Serial.println("[STORAGE ERROR] Outdated project file version. Loading safe defaults...");
     projectFile.close();
+    sd_close_after_rw();
     return false;
   }
 
@@ -176,6 +215,7 @@ bool load_project_file(uint8_t slot) {
   projectFile.read((uint8_t*)memory_ROTvalue, sizeof(memory_ROTvalue));
 
   projectFile.close();
+  sd_close_after_rw();
 
   // --- BUG FIX: Aggressive Sanitization of loaded flags ---
   for (byte f = 0; f < 16; f++) {

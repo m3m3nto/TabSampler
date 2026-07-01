@@ -606,6 +606,7 @@ void setup() {
 
   // Initialize PSRAM WAV database from SD Card
   loadWavsToPSRAM();
+  SD.end();
   M5.Display.setTextSize(2);
 
   // Initialize Internal DSP Synthesis Engine
@@ -615,10 +616,15 @@ void setup() {
   initADSR();
   synthESP32_setMFilter(master_filter);
 
-  // Initialize internal SPIFFS Partition for patterns & sounds save-state
+  // SPIFFS.begin() is intentionally called here as a hardware initialization
+  // side-effect: on ESP32-P4 it triggers esp_flash_init_default_chip() which
+  // configures the MSPI controller (shared by flash and PSRAM) in the correct
+  // state for I2S DMA audio. Without this call, audio output is distorted.
+  // SPIFFS is NOT used for storage - all saves go to SD via files_tools.ino.
   if (!SPIFFS.begin(true)) {
     Serial.println("SPIFFS initialization failed!");
   }
+  SPIFFS.end();
 
   M5.Display.fillScreen(TFT_BLACK);
   waveSprite.createSprite(WAVE_WIDTH, WAVE_HEIGHT);
