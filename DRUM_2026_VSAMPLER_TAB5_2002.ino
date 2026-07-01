@@ -13,6 +13,7 @@
 // File System Headers (Must be declared at the top for global tab visibility)
 #include <FS.h>
 #include <SPIFFS.h>
+#include <AMY-Arduino.h>  // AMY synthesizer engine
 
 #include "button.h"
 #include "rot.h"
@@ -54,6 +55,9 @@ Bseq* mSequencers[MAX_BUTTONS];
 
 // SD Memory Management
 #define MAX_SAMPLES_COUNT 128
+// AMY patch count — must be defined here (before max_values[]) since amy_synth.ino
+// is compiled after this file in Arduino's alphabetical order.
+#define AMY_PATCH_COUNT 24
 #define RAM_LIMIT (24 * 1024 * 1024)  // 24 MB allocated in PSRAM
 int16_t* SAMPLES[MAX_SAMPLES_COUNT];
 size_t SAMPLES_SIZES[MAX_SAMPLES_COUNT];
@@ -179,7 +183,7 @@ const int reso = 511;
 
 static int VOL_R[16] = { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
 static int VOL_L[16] = { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
-static int PAN[16] = { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
+static int DRUM_PAN[16] = { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
 static int mvol = 10;
 int master_vol = 255;
 int master_filter = 0;
@@ -214,9 +218,9 @@ uint8_t bitcrusher_type = 1;
 
 static uint32_t PCW[16];
 static uint32_t FTW[16];
-static unsigned char AMP[16];
+static unsigned char DRUM_AMP[16];
 static uint32_t PITCH[16];
-static int MOD[16] = { 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64 };
+static int DRUM_MOD[16] = { 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64 };
 static int32_t sound_A[16];
 static unsigned int wavs[16];
 static unsigned int envs[16];
@@ -303,7 +307,8 @@ const char* scaleNames[] = {
 };
 
 const int max_values[MAX_BARS] = {
-  MAX_SAMPLES_COUNT - 1, WT_COUNT - 1, 255, 255, 255, 255, 2047, 2047, 1, 3, 127, 127, 127, 127, 127, 127, 1, 1, 1, 10, 12, 2, 400, 1, 255, 255, 2, 127, 127, 127, 127, 127, 15, 255, 15, 15, 15, 127, 15, 16, 127, 127, 15, 127, 15
+  MAX_SAMPLES_COUNT - 1, AMY_PATCH_COUNT - 1, 255, 255, 255, 255, 2047, 2047, 1, 3, 127, 127, 127, 127, 127, 127, 1, 1, 1, 10, 12, 2, 400, 1, 255, 255, 2, 127, 127, 127, 127, 127, 15, 255, 15, 15, 15, 127, 15, 16, 127, 127, 15, 127, 15
+  // Note: index 1 (was WT_COUNT-1 = wavetable) is now AMY_PATCH_COUNT-1 = 23 (24 AMY patches)
 };
 
 const int min_values[MAX_BARS] = {
@@ -612,9 +617,13 @@ void setup() {
   // Initialize Internal DSP Synthesis Engine
   synthESP32_begin();
   synthESP32_setMVol(0);
+  amy_synth_begin();
   setSoundALL();
   initADSR();
   synthESP32_setMFilter(master_filter);
+
+  // Initialize AMY synthesizer engine (must be after SPIFFS MSPI workaround below)
+  // amy_synth_begin() is called after SPIFFS.end() — see comment block below
 
   // SPIFFS.begin() is intentionally called here as a hardware initialization
   // side-effect: on ESP32-P4 it triggers esp_flash_init_default_chip() which
@@ -670,6 +679,7 @@ void setup() {
 
 void loop() {
   M5.update();
+  amy_update();  // Give AMY time to process its event queue
   checkJackStatus();
 
   while (Serial.available() > 0) {

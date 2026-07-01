@@ -26,37 +26,34 @@ const float BASE_FREQ_INV = 1.0f / 261.63f;
 
 void synthESP32_begin(){
 
-  // 16 filters + master L & R (18)
+  // 16 filters + master L & R (18) — used only for sampler voices
   for (int fi=0; fi < 18; fi++) {
-    FILTROS[fi].setResonance(reso);
-    FILTROS[fi].setCutoffFreq(cutoff);
+    FILTROS[fi].setResonance(0);    // was 511 (overflow→255, max resonance) — fixed
+    FILTROS[fi].setCutoffFreq(255); // fully open by default
   }
-  // synth engine
 
-  precalculate_ftw_table();
-
+  // Keep sampler state arrays clean
   for (int ch = 0; ch < 16; ch++) {
     PITCH[ch] = 255;
     FTW[ch] = 0;
     PCW[ch] = 0;
-    AMP[ch] = 0;
+    DRUM_AMP[ch] = 0;
     EFTW[ch] = 0;
     EPCW[ch] = 0;   
   }
 
-  // Highest possible priority for realtime audio task
+  // Sampler audio task on Core 0, highest priority
+  // (AMY also runs on Core 0 via its own internal task started by amy_start())
   xTaskCreatePinnedToCore(
-                  audio_task,       //Function to implement the task 
-                  "audio", //Name of the task
-                  8000,       //Stack size in words 
-                  NULL,       //Task input parameter 
-                  configMAX_PRIORITIES - 1,          //Priority of the task 
-                  NULL,       //Task handle.
-                  0);         //Core where the task should run 
+                  audio_task,
+                  "audio",
+                  8000,
+                  NULL,
+                  configMAX_PRIORITIES - 1,
+                  NULL,
+                  0);
 
-  // Iniciar NEWENDS
-  //memcpy(NEWENDS, ENDS, sizeof(ENDS));
-
+  // Note: amy_synth_begin() is called separately from setup() after this function.
 }
 
 static void write_buffer() {
@@ -84,94 +81,11 @@ static void write_buffer() {
         // 16 Tracks
         int16_t sample;
         for (byte f = 0; f < 16; f++) {
-          if (ROTvalue[f][16]==1) { //////////////////////////////////////////////////////////////////////////////////////////////////// synth
-          
-            if (PITCH[f] != 255) {
-
-                EPCW[f] += EFTW[f];
-                uint16_t envelope_index = (uint16_t)(EPCW[f] >> 24);
-
-                if (envelope_index >= 255) {
-                    AMP[f] = 0;
-                    PITCH[f] = 255;
-                } else {
-                    AMP[f] = wenvs[envs[f]][envelope_index];
-                }
-                    
-                float current_freq_hz;
-                float base_pitch = (float)PITCH[f];
-                float mod_shift = (float)MOD[f] - 64.0f;
-                float modulation_amount = (float)(EPCW[f] >> 24) / 255.0f;
-                
-                // Base pitch con modulación de envolvente
-                float interpolated_pitch = base_pitch + mod_shift * modulation_amount;
-
-                float detune_amount = (float)((int8_t)detune[f]); 
-                
-                float detune_factor = 0.02f; 
-                
-                interpolated_pitch += (detune_amount * detune_factor);
-
-                if (interpolated_pitch < 0.0f) interpolated_pitch = 0.0f;
-                if (interpolated_pitch > 127.0f) interpolated_pitch = 127.0f;
-
-                int low_pitch_index = (int)interpolated_pitch;
-                int high_pitch_index = low_pitch_index + 1;
-                float fractional_part = interpolated_pitch - (float)low_pitch_index;
-
-
-                float low_ftw = PITCH_TABLE_FTW[low_pitch_index];
-                float high_ftw = PITCH_TABLE_FTW[high_pitch_index];
-                float current_ftw_f = low_ftw + (high_ftw - low_ftw) * fractional_part;
-                FTW[f] = (uint32_t)current_ftw_f;
-                PCW[f] += FTW[f]; 
-
-                uint16_t sindex = (uint16_t)(PCW[f] >> 22);
-                sample = ((int32_t)wtables[wavs[f]][sindex] * AMP[f]) >> 10;
-
-            } else {
-                sample = 0;
-            }
-
-              int32_t sss = FILTROS[f].next(sample);
-              int32_t sampleL = (sss * VOL_L[f] * 255) >> 16;
-              int32_t sampleR = (sss * VOL_R[f] * 255) >> 16;
-
-              DRUMTOTAL_L += sampleL;
-              DRUMTOTAL_R += sampleR;
-
-              if ((reverbs >> f) & 1) {
-                REVERB_SEND_L += sampleL;
-                REVERB_SEND_R += sampleR;
-              }
-              if ((delays >> f) & 1) {
-                DELAY_SEND_L += sampleL;
-                DELAY_SEND_R += sampleR;
-              }
-              if ((choruss >> f) & 1) {
-                CHORUS_SEND_L += sampleL;
-                CHORUS_SEND_R += sampleR;
-              }
-              if ((flangers >> f) & 1) {
-                FLANGER_SEND_L += sampleL;
-                FLANGER_SEND_R += sampleR;
-              }
-              if ((tremolos >> f) & 1) {
-                TREMOLO_SEND_L += sampleL;
-                TREMOLO_SEND_R += sampleR;
-              }
-              if ((ringmods >> f) & 1) {
-                RINGMOD_SEND_L += sampleL;
-                RINGMOD_SEND_R += sampleR;
-              }
-              if ((distortions >> f) & 1) {
-                DISTORTION_SEND_L += sampleL;
-                DISTORTION_SEND_R += sampleR;
-              }
-              if ((bitcrushers >> f) & 1) {
-                BITCRUSHER_SEND_L += sampleL;
-                BITCRUSHER_SEND_R += sampleR;
-              }
+          if (ROTvalue[f][16]==1) { // SYNTH — handled by AMY (amy_synth.ino), skip in sampler mix
+            // AMY manages its own I2S output independently.
+            // Triggers reach AMY via amy_synth_trigger() / amy_synth_trigger_p()
+            // called from synthESP32_TRIGGER() and synthESP32_TRIGGER_P().
+            continue;
 
           } else { /////////////////////////////////////////////////////////////////////////////////////////////////////////////////// SAMPLER
 
@@ -504,24 +418,15 @@ void synthESP32_TRIGGER(int nkey) {
     // Uso de bitwise AND para el wrap-around (solo funciona si el total es 16)
     int wkey = (nkey + osc) & 15; 
 
-    // --- MODO SINTETIZADOR ---
+    // --- MODO SINTETIZADOR → AMY ---
     if (ROTvalue[wkey][16] == 1) {
-      AMP[wkey] = 255; 
-      PITCH[wkey] = ppitch;
-      EPCW[wkey] = 0; // Reset de fase/envolvente
+      // Route to AMY engine (amy_synth.ino)
+      amy_synth_trigger(wkey);
     } 
     // --- MODO SAMPLER ---
     else {
       int sampleIdx = ROTvalue[wkey][0];
       bool isReverse = (ROTvalue[wkey][8] == 1);
-
-      // // Reinicio de posición
-
-      // if (isReverse) {
-      //   samplePos[wkey] = (uint64_t)NEWENDS[sampleIdx] << 16;
-      // } else {
-      //   samplePos[wkey] = (uint64_t)NEWINIS[sampleIdx] << 16;
-      // }
 
       if (isReverse) {
         samplePos[wkey] = (uint64_t)NEWENDS[wkey] << 16;
@@ -529,8 +434,6 @@ void synthESP32_TRIGGER(int nkey) {
         samplePos[wkey] = (uint64_t)NEWINIS[wkey] << 16;
       }
 
-      // Cálculo de velocidad de reproducción (Step Size)
-      // Optimizamos: (frecuencia_objetivo * constante_precalculada)
       float speedRatio = midiFrequencies[ppitch] * BASE_FREQ_INV;
       stepSize[wkey] = (uint64_t)(speedRatio * 65536.0f);
       
@@ -545,24 +448,15 @@ void synthESP32_TRIGGER_P(int nkey, int ppitch) {
   for (int osc = 0; osc < addnextsnd[nkey]; osc++) {
     int wkey = (nkey + osc) & 15; 
 
-    // --- MODO SINTETIZADOR ---
+    // --- MODO SINTETIZADOR → AMY ---
     if (ROTvalue[wkey][16] == 1) {
-      AMP[wkey] = 255; 
-      PITCH[wkey] = ppitch;
-      EPCW[wkey] = 0; // Reset de fase/envolvente
+      // Route to AMY engine with explicit pitch (melodic mode)
+      amy_synth_trigger_p(wkey, (uint8_t)constrain(ppitch, 0, 127));
     } 
     // --- MODO SAMPLER ---
     else {
       int sampleIdx = ROTvalue[wkey][0];
       bool isReverse = (ROTvalue[wkey][8] == 1);
-
-      // Reinicio de posición con casting limpio
-
-      // if (isReverse) {
-      //   samplePos[wkey] = (uint64_t)NEWENDS[sampleIdx] << 16;
-      // } else {
-      //   samplePos[wkey] = (uint64_t)NEWINIS[sampleIdx] << 16;
-      // }
 
       if (isReverse) {
         samplePos[wkey] = (uint64_t)NEWENDS[wkey] << 16;
@@ -570,8 +464,6 @@ void synthESP32_TRIGGER_P(int nkey, int ppitch) {
         samplePos[wkey] = (uint64_t)NEWINIS[wkey] << 16;
       }      
 
-      // Cálculo de velocidad de reproducción (Step Size)
-      // Optimizamos: (frecuencia_objetivo * constante_precalculada)
       float speedRatio = midiFrequencies[ppitch] * BASE_FREQ_INV;
       stepSize[wkey] = (uint64_t)(speedRatio * 65536.0f);
       
@@ -588,37 +480,25 @@ void setSoundALL(){
   }
 }
 void setSound(byte f) {
-  //if (xSemaphoreTake(audioMutex, portMAX_DELAY) == pdTRUE) {
     if (ROTvalue[f][16]) {
-      // synth engine
-      synthESP32_setWave(f,ROTvalue[f][1]);  
-      synthESP32_setEnvelope(f,ROTvalue[f][9]);
-      synthESP32_setLength(f,ROTvalue[f][10]);
-      // cambio pitch solo si no es melodic
-      if (!isMelodic[f])  synthESP32_setPitch(f,ROTvalue[f][12]);
-
-      synthESP32_setMod(f,ROTvalue[f][11]);
-
-      //AMP[f] = 255; 
-      //PITCH[f] = 255;
-      //EPCW[f] = 0; // Reset de fase/envolvente
-
+      // --- SYNTH MODE: configure AMY patch ---
+      // ROTvalue[f][1] = patch index 0-23 (see AMY_PATCH_TABLE in amy_synth.ino)
+      amy_synth_set_patch(f, (uint8_t)ROTvalue[f][1]);
+      if (!isMelodic[f]) synthESP32_setPitch(f, ROTvalue[f][12]);
 
     } else {
-      // Modifican NEWINIS y NEWENDS, que son usados por write_buffer()
-     synthESP32_setIni(f, ROTvalue[f][6]);  
-     synthESP32_setEnd(f, ROTvalue[f][7]);
+      // --- SAMPLER MODE: set loop start/end points ---
+      synthESP32_setIni(f, ROTvalue[f][6]);
+      synthESP32_setEnd(f, ROTvalue[f][7]);
     }
 
-    // Modifican VOL_L[] y VOL_R[]
-    synthESP32_updateVolPan(f);  
+    // Vol/pan: applies to sampler; AMY volume is carried by velocity at trigger time
+    synthESP32_updateVolPan(f);
 
-    // Modifica FILTROS[f]
-    synthESP32_setFilter(f, ROTvalue[f][15]);
-
-    //xSemaphoreGive(audioMutex);
-  //}
-
+    // Filter: only apply to sampler voices; AMY has its own internal filters
+    if (!ROTvalue[f][16]) {
+      synthESP32_setFilter(f, ROTvalue[f][15]);
+    }
 }
 void setRandomVoice2(byte f){
   // ROTvalue[f][0]=random(min_values[0], max_values[0]);
@@ -756,7 +636,7 @@ void synthESP32_setPitch(unsigned char voice,unsigned char MIDInote) {
 //*********************************************************************
 
 void synthESP32_setMod(unsigned char voice,unsigned char mod) {
-  MOD[voice]=(int)mod;
+  DRUM_MOD[voice]=(int)mod;
 }
 
 //*********************************************************************

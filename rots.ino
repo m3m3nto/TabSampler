@@ -244,20 +244,26 @@ void do_rot(){
             synthESP32_setEnd(f, ROTvalue[f][7]);
             break;
           case 1:
-            synthESP32_setWave(f,ROTvalue[f][1]);
+            // Synth mode: ROTvalue[f][1] is now AMY patch index (0-23)
+            if (ROTvalue[f][16] == 1) {
+              amy_synth_set_patch(f, (uint8_t)ROTvalue[f][1]);
+            }
+            // Sampler mode: index 1 is wavetable — no direct mapping needed here
             break;
-          case 9:  
-            synthESP32_setEnvelope(f,ROTvalue[f][9]);
+          case 9:
+            // Envelope: only applies to sampler ADSR; AMY manages its own envelopes
             break;
           case 10:
-            synthESP32_setLength(f,ROTvalue[f][10]);
+            // Length: only applies to sampler; AMY note length is release-based
+            if (!ROTvalue[f][16]) synthESP32_setLength(f, ROTvalue[f][10]);
             break;
           case 12:
             synthESP32_setPitch(f,ROTvalue[f][12]);
             refreshSEQ=true;
             break;
           case 11:
-            synthESP32_setMod(f,ROTvalue[f][11]);
+            // Mod: only applies to internal sampler pitch mod; not mapped to AMY
+            if (!ROTvalue[f][16]) synthESP32_setMod(f,ROTvalue[f][11]);
             break;
           // Modifican NEWINIS y NEWENDS, que son usados por write_buffer()
           case 6:

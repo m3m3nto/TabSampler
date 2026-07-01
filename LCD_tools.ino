@@ -408,7 +408,7 @@ void REFRESH_KEYS() {
         drawBT(37, ZBLUE, "TREMOLO");
         break; 
       case tRingmod:
-        drawBT(43, ZCYAN, "RING MOD");
+        drawBT(43, ZCYAN, "RING DRUM_MOD");
         break; 
       case tDistortion:
         drawBT(44, ZGREENCLEAR, "DISTORTION");
@@ -947,12 +947,12 @@ void fillBPOS() {
 
   mRotators[9] =  new Rot(  800,  40, 160,  50, "ENVELOPE",    1,48, 0);
   mRotators[10] = new Rot(  800,  90, 160,  50, "LEN",         1,49, 0);
-  mRotators[11] = new Rot(  800, 140, 160,  50, "MOD",         1,50, 0);
+  mRotators[11] = new Rot(  800, 140, 160,  50, "DRUM_MOD",         1,50, 0);
   mRotators[40] = new Rot(  800, 190, 160,  50, "DETUNE",      1,51, 0);
   mRotators[39] = new Rot(  800, 240, 160,  50, "ADD NEXT SND",0,55, 0);
 
   mRotators[14] = new Rot(  960,  40, 160,  50, "VOL",         1,52, 0);
-  mRotators[13] = new Rot(  960,  90, 160,  50, "PAN",         1,53, 0);
+  mRotators[13] = new Rot(  960,  90, 160,  50, "DRUM_PAN",         1,53, 0);
   mRotators[12] = new Rot(  960, 140, 160,  50, "PITCH",       1,54, 0);
   mRotators[15] = new Rot(  960, 190, 160,  50, "FILTER",      1,55, 0);
   mRotators[16] = new Rot(  960, 240, 160,  50, "TYPE",        1,99, 0);
@@ -993,7 +993,7 @@ void fillBPOS() {
   mRotators[31] = new Rot(  640, 100, 160,  50, "T LEVEL",       3,52, 2); 
   mRotators[36] = new Rot(  640, 150, 160,  50, "T TYPE",        4,52, 2);
 
-  mButtons[43] = new Boton(  800, 100, 160, 100, "RING MOD", 2);
+  mButtons[43] = new Boton(  800, 100, 160, 100, "RING DRUM_MOD", 2);
   mRotators[37] = new Rot(  960, 100, 160,  50, "RM LEVEL",      3,53, 2); 
   mRotators[38] = new Rot(  960, 150, 160,  50, "RM TYPE",       4,53, 2);
 
