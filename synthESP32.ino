@@ -56,7 +56,15 @@ void synthESP32_begin(){
   // Note: amy_synth_begin() is called separately from setup() after this function.
 }
 
+#if defined(AMY_BLOCK_SIZE) && (AMY_BLOCK_SIZE != DMA_BUF_LEN)
+#error "AMY_BLOCK_SIZE must equal DMA_BUF_LEN: write_buffer() pulls exactly one AMY block per audio block."
+#endif
+
 static void write_buffer() {
+    // Render one AMY block (AMY_BLOCK_SIZE == DMA_BUF_LEN stereo frames) and
+    // mix it in below, sample by sample, alongside the sampler engine.
+    int16_t* amy_buf = amy_update();
+
     for (int i = 0; i < DMA_BUF_LEN; i++) {
         
         // FX
@@ -164,6 +172,11 @@ static void write_buffer() {
             }
           }
         }
+        // AMY synth engine output (channels with ROTvalue[f][16]==1, rendered
+        // by amy_synth.ino via amy_update() above — see amy_synth_begin()).
+        DRUMTOTAL_L += amy_buf[i * 2];
+        DRUMTOTAL_R += amy_buf[i * 2 + 1];
+
         // DRY
         DRUMTOTAL_L = soft_clip(DRUMTOTAL_L);
         DRUMTOTAL_R = soft_clip(DRUMTOTAL_R);

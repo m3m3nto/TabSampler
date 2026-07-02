@@ -614,16 +614,17 @@ void setup() {
   SD.end();
   M5.Display.setTextSize(2);
 
+  // Initialize AMY BEFORE synthESP32_begin(): the latter spawns the Core-0
+  // audio task, whose write_buffer() calls amy_update() every iteration —
+  // that must never run before amy_start() has initialized AMY.
+  amy_synth_begin();
+
   // Initialize Internal DSP Synthesis Engine
   synthESP32_begin();
   synthESP32_setMVol(0);
-  amy_synth_begin();
   setSoundALL();
   initADSR();
   synthESP32_setMFilter(master_filter);
-
-  // Initialize AMY synthesizer engine (must be after SPIFFS MSPI workaround below)
-  // amy_synth_begin() is called after SPIFFS.end() — see comment block below
 
   // SPIFFS.begin() is intentionally called here as a hardware initialization
   // side-effect: on ESP32-P4 it triggers esp_flash_init_default_chip() which
@@ -679,7 +680,9 @@ void setup() {
 
 void loop() {
   M5.update();
-  amy_update();  // Give AMY time to process its event queue
+  // AMY is rendered from the Core-0 audio task (write_buffer() in
+  // synthESP32.ino), not here — calling amy_update() a second time from
+  // this loop would consume/desync its block queue.
   checkJackStatus();
 
   while (Serial.available() > 0) {

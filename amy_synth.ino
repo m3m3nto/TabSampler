@@ -3,20 +3,29 @@
 //  AMY Synthesizer Integration Layer
 //
 //  Replaces the internal wavetable synth engine (synthESP32.ino synth block)
-//  with AMY, providing 24 Juno-6 and DX7 FM patches per voice channel.
+//  with AMY, providing 24 Juno-6 and DX7 FM patches per drum-machine channel.
 //
-//  AMY runs on Core 0 via its own internal task (started by amy_start()).
+//  AMY is run in "manual render" mode (amy_config.audio = AMY_AUDIO_IS_NONE,
+//  no internal thread/core). It never touches I2S itself — write_buffer()
+//  in synthESP32.ino calls amy_update() once per audio block (256 samples,
+//  matching AMY_BLOCK_SIZE) and mixes the returned stereo buffer straight
+//  into the same M5.Speaker output the sampler already uses. This is the
+//  only audio path on Tab5: the speaker/codec is owned exclusively by
+//  M5Unified, so AMY must never be allowed to grab its own I2S peripheral.
+//
 //  The sampler engine in synthESP32.ino (write_buffer / audio_task) is
-//  kept intact and continues to handle voices with ROTvalue[f][16] == 0.
+//  kept intact and continues to handle channels with ROTvalue[f][16] == 0.
 //
-//  AMY outputs audio through M5.Speaker via a bridge buffer (see amy_bridge.ino
-//  pattern); here we use the simpler approach of letting AMY own the I2S
-//  output (AMY_AUDIO_INTERNAL) and mixing conceptually at the application level
-//  by routing sampler voices through M5.Speaker and AMY voices through AMY.
-//  Both share the same I2S hardware on Tab5 through M5Unified.
+//  Each drum-machine channel f (0-15) maps 1:1 to an AMY "synth" (a
+//  MIDI-channel-like zone owning AMY_VOICES_PER_CHANNEL voices) — see
+//  amy_synth_set_patch(). Patches/notes are addressed via e.synth, not
+//  e.voices[], since voices[] targets raw oscillators and bypasses AMY's
+//  own per-patch voice allocation (multi-oscillator FM/Juno patches need
+//  more than one oscillator, allocated through num_voices).
 //
-//  IMPORTANT: Call amy_synth_begin() AFTER M5.Speaker.config() and AFTER
-//  SPIFFS.begin()/SPIFFS.end() (the MSPI init workaround).
+//  IMPORTANT: amy_synth_begin() (-> amy_start()) MUST run before
+//  synthESP32_begin() spawns the Core-0 audio task, since that task's
+//  write_buffer() calls amy_update() on every iteration.
 // =============================================================================
 
 #include <AMY-Arduino.h>
@@ -54,10 +63,10 @@ const int AMY_PATCH_TABLE[24] = {
 };
 // AMY_PATCH_COUNT is defined in DRUM_2026_VSAMPLER_TAB5_2002.ino (must precede max_values[])
 
-// One AMY oscillator group (voice) per drum-machine channel.
-// AMY manages polyphony internally within each voice slot.
-// We map drum-machine channel f → AMY voice f (0-15).
-#define AMY_VOICE_BASE 0  // AMY voices 0-15 reserved for synth channels
+// One AMY "synth" (MIDI-channel-like zone) per drum-machine channel f (0-15).
+// Each synth owns AMY_VOICES_PER_CHANNEL voices/oscillator-sets and AMY
+// manages polyphony/voice-stealing internally within that pool.
+#define AMY_VOICES_PER_CHANNEL 2
 
 // Track active patch per channel so we only reconfigure on change
 static int amy_active_patch[16];
@@ -102,12 +111,18 @@ const char* AMY_PATCH_NAMES[AMY_PATCH_COUNT] = {
 void amy_synth_begin() {
   amy_config_t amy_config = amy_default_config();
 
-  // Tab5 uses M5Unified speaker — let AMY share it via internal audio.
-  // AMY will call M5.Speaker.playRaw() internally on ESP32-P4 when
-  // AMY_AUDIO_INTERNAL is set, same as the sampler path.
-  // If your build of AMY-Arduino does not expose AMY_AUDIO_IS_NONE,
-  // leave the default (AMY_AUDIO_INTERNAL).
-  // amy_config.audio = AMY_AUDIO_INTERNAL; // default, fine for Tab5
+  // Tab5's speaker is driven exclusively by M5Unified's own codec/I2S driver
+  // (M5.Speaker). AMY's default config tries to own a *second*, independent
+  // I2S peripheral (AMY_AUDIO_IS_I2S) using i2s_bclk/i2s_lrc/i2s_dout pins
+  // that are never set here (they default to -1) — that peripheral isn't
+  // wired to anything on this board, so AMY renders happily into the void:
+  // no error, no crash, no sound. Instead we render AMY manually and mix
+  // its blocks into the existing M5.Speaker output path (see write_buffer()
+  // in synthESP32.ino, which calls amy_update() once per audio block).
+  amy_config.audio = AMY_AUDIO_IS_NONE;
+  amy_config.platform.multicore = 0;
+  amy_config.platform.multithread = 0;
+  amy_config.features.default_synths = 0;  // we define one synth per drum channel ourselves
 
   amy_start(amy_config);
 
@@ -124,7 +139,7 @@ void amy_synth_begin() {
     }
   }
 
-  Serial.println("[AMY] Synth engine started.");
+  Serial.println("[AMY] Synth engine started — manual render, bridged into M5.Speaker mix.");
 }
 
 // ---------------------------------------------------------------------------
@@ -142,17 +157,20 @@ void amy_synth_set_patch(uint8_t channel, uint8_t patchIndex) {
   // Send note-off for any hanging note before changing patch
   if (amy_active_note[channel] >= 0) {
     amy_event e = amy_default_event();
-    e.voices[0] = AMY_VOICE_BASE + channel;
+    e.synth     = channel;
     e.velocity  = 0;
     e.midi_note = amy_active_note[channel];
     amy_add_event(&e);
     amy_active_note[channel] = -1;
   }
 
-  // Configure patch on this AMY voice
+  // (Re)define the AMY synth (MIDI-channel-like zone) for this drum channel:
+  // patch_number + num_voices must be set together, otherwise AMY won't
+  // allocate the oscillator(s) the patch needs and no sound is produced.
   amy_event e = amy_default_event();
-  e.voices[0]    = AMY_VOICE_BASE + channel;
+  e.synth        = channel;
   e.patch_number = amyPatch;
+  e.num_voices   = AMY_VOICES_PER_CHANNEL;
   amy_add_event(&e);
 
   Serial.printf("[AMY] ch%d patch=%d (%s)\n", channel, amyPatch,
@@ -171,14 +189,14 @@ void amy_synth_note_on(uint8_t channel, uint8_t midiNote, float velocity) {
   // Note-off any previous hanging note on this channel
   if (amy_active_note[channel] >= 0 && amy_active_note[channel] != (int8_t)midiNote) {
     amy_event eoff = amy_default_event();
-    eoff.voices[0] = AMY_VOICE_BASE + channel;
+    eoff.synth     = channel;
     eoff.velocity  = 0;
     eoff.midi_note = amy_active_note[channel];
     amy_add_event(&eoff);
   }
 
   amy_event e  = amy_default_event();
-  e.voices[0]  = AMY_VOICE_BASE + channel;
+  e.synth      = channel;
   e.midi_note  = midiNote;
   e.velocity   = velocity;
   amy_add_event(&e);
@@ -193,7 +211,7 @@ void amy_synth_note_off(uint8_t channel) {
   if (amy_active_note[channel] < 0) return;
 
   amy_event e  = amy_default_event();
-  e.voices[0]  = AMY_VOICE_BASE + channel;
+  e.synth      = channel;
   e.velocity   = 0;
   e.midi_note  = amy_active_note[channel];
   amy_add_event(&e);
