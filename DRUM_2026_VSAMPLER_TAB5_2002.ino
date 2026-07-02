@@ -699,9 +699,10 @@ void loop() {
         refreshPADSTEP = true;
       }
     } 
-    else if (b == MIDI_STOP) { 
+    else if (b == MIDI_STOP) {
       if (sync_state == 2) {
         seq.stop();
+        amy_synth_all_notes_off();
         playing = false;
         clearPADSTEP = true;
       }

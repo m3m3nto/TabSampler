@@ -47,14 +47,6 @@
 // manages polyphony/voice-stealing internally within that pool.
 #define AMY_VOICES_PER_CHANNEL 2
 
-// Drum-machine steps never signal "key up" — a trigger is a one-shot hit, not
-// a held note. Sustain/pad-style patches would otherwise ring forever and
-// every retrigger would pile another held note on top until AMY runs out of
-// voices. AMY_GATE_MS bounds every note's lifetime with a scheduled auto
-// release (see amy_synth_note_on()); the patch's own release stage still
-// shapes the tail.
-#define AMY_GATE_MS 400
-
 // Track active patch per channel so we only reconfigure on change
 static int amy_active_patch[16];
 
@@ -226,12 +218,22 @@ void amy_synth_set_patch(uint8_t channel, uint8_t patchIndex) {
 //
 //  Every channel here is a one-shot drum-machine trigger, not a held key:
 //  there is no separate "key up" event anywhere upstream. So every note-on
-//  (a) immediately chokes whatever was still sounding on this channel, like
-//  retriggering a drum pad, and (b) schedules its own auto-release
-//  AMY_GATE_MS later, so a hit is always bounded even if it's never
-//  retriggered. Without this, sustain/pad patches would ring forever and
-//  each new hit would just pile another held note on top until AMY ran out
-//  of voices — which is what was crashing the app.
+//  immediately chokes whatever was still sounding on this channel, like
+//  retriggering a drum pad — always, even for the same pitch, since a
+//  retrigger is a brand new hit.
+//
+//  NOTE: an earlier version also scheduled a future auto-release
+//  (e.time = amy_sysclock() + N) as a safety net for the very last note on
+//  a channel. That caused "note off ... does not match note on" warnings
+//  from AMY whenever a channel got retriggered before its scheduled release
+//  fired (the release then arrived orphaned). Those warnings print to
+//  Serial from AMY's own thread, racing with the MIDI byte-reading loop()
+//  and flooding the UART driver — which starved Core 0 and crashed the
+//  device via the task watchdog. Choking on retrigger is enough for the
+//  sequencer's continuous playback; the one remaining gap (a channel that's
+//  simply never triggered again, e.g. sequencer stop) is covered
+//  explicitly and deterministically by amy_synth_all_notes_off() instead
+//  of a speculative timer — see its call sites.
 // ---------------------------------------------------------------------------
 void amy_synth_note_on(uint8_t channel, uint8_t midiNote, float velocity) {
   // Ensure patch is loaded
@@ -254,15 +256,6 @@ void amy_synth_note_on(uint8_t channel, uint8_t midiNote, float velocity) {
   amy_add_event(&e);
 
   amy_active_note[channel] = (int8_t)midiNote;
-
-  // Safety-net auto-release: guarantees this note ends even if the channel
-  // is never retriggered again (e.g. last hit before the sequencer stops).
-  amy_event eauto = amy_default_event();
-  eauto.synth     = channel;
-  eauto.velocity  = 0;
-  eauto.midi_note = midiNote;
-  eauto.time      = amy_sysclock() + AMY_GATE_MS;
-  amy_add_event(&eauto);
 }
 
 // ---------------------------------------------------------------------------

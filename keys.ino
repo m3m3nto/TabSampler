@@ -384,10 +384,11 @@ void DO_KEYPAD(){
             case 22:
               if (playing){
                 seq.stop();
+                amy_synth_all_notes_off();
                 sstep=firstStep;
                 recording=false;
                 clearPADSTEP=true;
-                pattern_song_counter=0; 
+                pattern_song_counter=0;
               } else {
                 if (sync_state==2){ // if this machine is slave dont start playing now
                   pre_playing=true;
