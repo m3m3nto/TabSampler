@@ -494,10 +494,9 @@ void setSoundALL(){
 }
 void setSound(byte f) {
     if (ROTvalue[f][16]) {
-      // --- SYNTH MODE: configure AMY patch ---
-      // ROTvalue[f][1] = patch index 0-23 (see AMY_PATCH_TABLE in amy_synth.ino)
+      // --- SYNTH MODE: load the AMY patch as-is (phase 1) ---
+      // ROTvalue[f][1] = AMY patch index 0-255 (see AMY_PATCH_NAMES in amy_synth.ino)
       amy_synth_set_patch(f, (uint8_t)ROTvalue[f][1]);
-      if (!isMelodic[f]) synthESP32_setPitch(f, ROTvalue[f][12]);
 
     } else {
       // --- SAMPLER MODE: set loop start/end points ---

@@ -244,7 +244,7 @@ void do_rot(){
             synthESP32_setEnd(f, ROTvalue[f][7]);
             break;
           case 1:
-            // Synth mode: ROTvalue[f][1] is now AMY patch index (0-23)
+            // Synth mode: ROTvalue[f][1] is the AMY patch index (0-255)
             if (ROTvalue[f][16] == 1) {
               amy_synth_set_patch(f, (uint8_t)ROTvalue[f][1]);
             }
@@ -258,7 +258,10 @@ void do_rot(){
             if (!ROTvalue[f][16]) synthESP32_setLength(f, ROTvalue[f][10]);
             break;
           case 12:
-            synthESP32_setPitch(f,ROTvalue[f][12]);
+            // Pitch: sampler reads this via PITCH[]; AMY reads ROTvalue[f][12]
+            // directly at trigger time (see amy_synth_trigger()), so the
+            // legacy setter below is sampler-only.
+            if (!ROTvalue[f][16]) synthESP32_setPitch(f,ROTvalue[f][12]);
             refreshSEQ=true;
             break;
           case 11:
@@ -279,9 +282,13 @@ void do_rot(){
           case 14:
             synthESP32_updateVolPan(f);  
             break;
-          // Modifica FILTROS[f]
+          // Modifica FILTROS[f] — sampler-only; AMY patches keep their own
+          // authored filter/resonance untouched for now (phase 1: load the
+          // patch as-is, see amy_synth_set_patch()). A dedicated AMY
+          // parameter engine (filter/resonance/envelope editing wired to
+          // AMY's own event fields) is planned separately.
           case 15:
-            synthESP32_setFilter(f, ROTvalue[f][15]);
+            if (!ROTvalue[f][16]) synthESP32_setFilter(f, ROTvalue[f][15]);
             break;
           case 16:
             setSound(selected_sound);

@@ -57,7 +57,9 @@ Bseq* mSequencers[MAX_BUTTONS];
 #define MAX_SAMPLES_COUNT 128
 // AMY patch count — must be defined here (before max_values[]) since amy_synth.ino
 // is compiled after this file in Arduino's alphabetical order.
-#define AMY_PATCH_COUNT 24
+// 256 = AMY's complete built-in patch set: full Juno-6 bank (0-127) +
+// full DX7 FM bank (128-255).
+#define AMY_PATCH_COUNT 256
 #define RAM_LIMIT (24 * 1024 * 1024)  // 24 MB allocated in PSRAM
 int16_t* SAMPLES[MAX_SAMPLES_COUNT];
 size_t SAMPLES_SIZES[MAX_SAMPLES_COUNT];
@@ -308,7 +310,7 @@ const char* scaleNames[] = {
 
 const int max_values[MAX_BARS] = {
   MAX_SAMPLES_COUNT - 1, AMY_PATCH_COUNT - 1, 255, 255, 255, 255, 2047, 2047, 1, 3, 127, 127, 127, 127, 127, 127, 1, 1, 1, 10, 12, 2, 400, 1, 255, 255, 2, 127, 127, 127, 127, 127, 15, 255, 15, 15, 15, 127, 15, 16, 127, 127, 15, 127, 15
-  // Note: index 1 (was WT_COUNT-1 = wavetable) is now AMY_PATCH_COUNT-1 = 23 (24 AMY patches)
+  // Note: index 1 (was WT_COUNT-1 = wavetable) is now AMY_PATCH_COUNT-1 = 255 (256 AMY patches)
 };
 
 const int min_values[MAX_BARS] = {

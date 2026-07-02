@@ -771,7 +771,7 @@ void do_drawBar(byte bar) {
     if (ROTvalue[selected_sound][16] == 0) {
       snprintf(safeBuffer, sizeof(safeBuffer), "%-26s", SAMPLE_NAMES[ROTvalue[selected_sound][0]].c_str());      
     } else {
-      snprintf(safeBuffer, sizeof(safeBuffer), "%-26s", txt_wtables[ROTvalue[selected_sound][1]]);      
+      snprintf(safeBuffer, sizeof(safeBuffer), "%-26s", amy_get_patch_name((uint8_t)ROTvalue[selected_sound][1]));
     }
     M5.Display.print(safeBuffer);
   }
